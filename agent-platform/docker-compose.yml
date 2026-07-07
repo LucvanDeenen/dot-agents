@@ -1,0 +1,87 @@
+version: "3.9"
+
+# Supporting infra + base API for the agentic platform.
+# Ephemeral agent-runner containers are NOT defined here — the API launches
+# them on demand via the docker-socket-proxy (see Services/ClaudeAgentRunner.cs).
+# Build the agent-runner image once so it's available to `docker create`:
+#   docker build -t agent-runner:latest ./agent-runner
+
+networks:
+  edge:
+    external: true      # your existing Traefik network
+  agent-internal:
+    external: false      # not attached to edge — never exposed via Traefik/tunnel
+
+volumes:
+  postgres_data:
+  claude-credentials:    # holds the long-lived OAuth token from `claude setup-token`
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agent-internal
+    # deliberately no ports: / no edge network — only agent-api can reach it
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    restart: unless-stopped
+    environment:
+      # scoped permissions — only what the API needs to spin up agent containers
+      CONTAINERS: 1
+      IMAGES: 1
+      NETWORKS: 1
+      VOLUMES: 1
+      POST: 1
+      # everything else explicitly off
+      SERVICES: 0
+      TASKS: 0
+      SWARM: 0
+      SECRETS: 0
+      CONFIGS: 0
+      NODES: 0
+      PLUGINS: 0
+      SESSION: 0
+      DISTRIBUTION: 0
+      BUILD: 0
+      COMMIT: 0
+      EXEC: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - agent-internal
+    # again: no edge network, no ports published. This container effectively
+    # has host-level power — it must never be reachable from outside the Pi.
+
+  agent-api:
+    build:
+      context: ./api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - docker-socket-proxy
+    environment:
+      ConnectionStrings__Default: >-
+        Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Docker__ProxyEndpoint: tcp://docker-socket-proxy:2375
+      Claude__AgentRunnerImage: agent-runner:latest
+      Claude__CredentialsVolume: claude-credentials
+      Claude__CredentialsPath: /credentials/token
+    volumes:
+      - claude-credentials:/credentials:ro
+    networks:
+      - edge
+      - agent-internal
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.agent-api.rule: "Host(`agent.dedeen.dev`)"
+      traefik.http.routers.agent-api.entrypoints: "web"
+      traefik.http.services.agent-api.loadbalancer.server.port: "8080"
+      traefik.docker.network: "edge"
