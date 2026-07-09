@@ -5,14 +5,14 @@ namespace AgentPlatform.Api.Data;
 
 public class AgentDbContext(DbContextOptions<AgentDbContext> options) : DbContext(options)
 {
-    public DbSet<AgentJob> Jobs => Set<AgentJob>();
+    public DbSet<AgentTask> AgentTasks => Set<AgentTask>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<AgentJob>(entity =>
+        modelBuilder.Entity<AgentTask>(entity =>
         {
-            entity.HasKey(j => j.Id);
-            entity.Property(j => j.Status).HasConversion<string>();
+            entity.Property(t => t.RoutingKey).HasMaxLength(256);
+            entity.Property(t => t.Status).HasConversion<string>().HasMaxLength(32);
         });
     }
 }

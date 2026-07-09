@@ -1,0 +1,14 @@
+# .NET build artifacts
+bin/
+obj/
+*.user
+
+# env files
+.env
+.env.*
+!.env.example
+
+# Editor directories and files
+.vs/
+.idea/
+*.swp

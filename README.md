@@ -1,29 +1,28 @@
-# agent-platform
+# dot-agents
 
-Self-hosted agentic orchestration layer: a .NET API that accepts job requests and dispatches them as ephemeral Claude Code containers via a scoped docker-socket-proxy, backed by Postgres for job state.
+Self-hosted agentic setup for managing my own agents at home (runs on a Raspberry Pi).
+
+- **frontend/** — Vue app for submitting/interacting with tasks.
+- **agent-platform/api/** — ASP.NET Core API. Accepts task requests, persists them to Postgres, and publishes them onto a RabbitMQ topic exchange so worker agents can pick them up.
 
 ## Architecture
 
-- **agent-api** — ASP.NET Core minimal API. Accepts job requests, persists them, polls and dispatches pending jobs.
-- **postgres** — job queue / state store. Internal network only.
-- **docker-socket-proxy** — scoped Docker API access so agent-api can create containers without holding raw `docker.sock`.
-- **agent-runner** (image, not a running service) — Node + Claude Code CLI image. agent-api launches one ephemeral container per job from this image, then removes it on completion.
+- **postgres** — task/job state store.
+- **rabbitmq** — topic exchange (`agent.tasks`) that task requests are published to; queues bound to it by routing key are consumed by worker agents that pick up and process the work (currently: development tasks that commit into GitHub repos).
+- **agent-platform/api** — connects to both on startup: runs EF Core migrations against Postgres and declares the RabbitMQ topology (exchange/queue/binding).
 
-## Secrets
-
-- `.env` — **Required**. Postgres credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`). Copy from `.env.example`.
-- `claude-credentials` volume — **Required**. Populate once via `claude setup-token` on a machine with your subscription logged in, then copy the resulting token file into the volume. Mounted read-only into agent-api and passed through to each ephemeral agent-runner container.
-
-## Build the agent-runner image
+## Local development
 
 ```bash
-docker build -t agent-runner:latest ./agent-runner
+cp .env.example .env   # fill in real credentials
+docker compose up -d   # postgres + rabbitmq
+cd agent-platform/api
+dotnet run
 ```
 
-Rebuild whenever you bump the Claude Code CLI version pinned in `agent-runner/Dockerfile`.
+RabbitMQ management UI: http://localhost:15673 (or whatever port you mapped in `docker-compose.yml` — 5672/15672 are remapped to 5673/15673 by default to avoid clashing with other local RabbitMQ instances).
 
 ## Notes / TODO
 
-- git checkout + co-authored commits are stubbed in `agent-runner/entrypoint.sh` — wire up your deploy key / repo access there.
-- No auth on the API yet — put it behind something before exposing `agent.dedeen.dev` beyond your own use.
-- `--max-turns` / `--allowedTools` are hardcoded in `ClaudeAgentRunner.cs` for now — worth making these per-job-type config.
+- `AgentTask` (Postgres table) and the `agent.tasks` exchange/`agent.tasks.queue` binding are placeholders — routing key scheme (`task.#`), per-agent-type queues, and the actual publish/consume + agent dispatch logic still need to be built.
+- No auth on the API yet.

@@ -1,46 +1,35 @@
 using AgentPlatform.Api.Data;
-using AgentPlatform.Api.Models;
-using AgentPlatform.Api.Services;
+using AgentPlatform.Api.Messaging;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AgentDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddOpenApi();
 
-builder.Services.AddSingleton<IAgentRunner, ClaudeAgentRunner>();
-builder.Services.AddHostedService<JobDispatcher>();
+builder.Services.AddDbContext<AgentDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+
+builder.Services
+    .AddOptions<RabbitMqOptions>()
+    .Bind(builder.Configuration.GetSection(RabbitMqOptions.SectionName))
+    .ValidateDataAnnotations();
+builder.Services.AddSingleton<RabbitMqConnectionHolder>();
+builder.Services.AddHostedService<RabbitMqTopologyInitializer>();
 
 var app = builder.Build();
 
-// Apply migrations on startup — fine for a single-node homelab deployment.
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AgentDbContext>();
-    db.Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<AgentDbContext>().Database.Migrate();
 }
 
-app.MapPost("/jobs", async (CreateJobRequest request, AgentDbContext db) =>
+if (app.Environment.IsDevelopment())
 {
-    var job = new AgentJob
-    {
-        Prompt = request.Prompt,
-        RepoUrl = request.RepoUrl,
-        Branch = request.Branch
-    };
+    app.MapOpenApi();
+}
 
-    db.Jobs.Add(job);
-    await db.SaveChangesAsync();
+app.UseHttpsRedirection();
 
-    return Results.Created($"/jobs/{job.Id}", job);
-});
-
-app.MapGet("/jobs/{id:guid}", async (Guid id, AgentDbContext db) =>
-    await db.Jobs.FindAsync(id) is { } job ? Results.Ok(job) : Results.NotFound());
-
-app.MapGet("/jobs", async (AgentDbContext db) =>
-    await db.Jobs.OrderByDescending(j => j.CreatedAt).Take(50).ToListAsync());
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
-
-record CreateJobRequest(string Prompt, string? RepoUrl, string? Branch);
