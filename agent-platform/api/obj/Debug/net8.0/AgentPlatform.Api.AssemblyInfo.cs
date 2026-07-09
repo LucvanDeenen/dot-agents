@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AgentPlatform.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f052e36bd5e9f4a008a7f18210e9b283428ee1c1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+34d7e84e1be38199adabd193325f8f403ebc8aa3")]
 [assembly: System.Reflection.AssemblyProductAttribute("AgentPlatform.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AgentPlatform.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
