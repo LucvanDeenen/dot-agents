@@ -1,12 +1,13 @@
 using System.Text.Json;
 using AgentPlatform.Api.Data;
+using AgentPlatform.Api.Messaging;
 using AgentPlatform.Api.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace AgentPlatform.Api.Messaging;
+namespace AgentPlatform.Api.Listeners;
 
 // Consumes AgentTask.Id messages off _options.TaskQueue and updates task state.
 public class TaskQueueListener(
@@ -27,8 +28,8 @@ public class TaskQueueListener(
 
         // Only hand this consumer one unacked message at a time — an agent
         // job can run for minutes, no reason to prefetch a backlog.
-        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false,
-            cancellationToken: stoppingToken);
+        await _channel.BasicQosAsync(0, 1, false,
+            stoppingToken);
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (_, ea) =>
@@ -41,38 +42,38 @@ public class TaskQueueListener(
             catch (JsonException ex)
             {
                 logger.LogError(ex, "Unparseable task message, dropping. DeliveryTag={DeliveryTag}", ea.DeliveryTag);
-                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false,
-                    cancellationToken: stoppingToken);
+                await _channel.BasicNackAsync(ea.DeliveryTag, false, false,
+                    stoppingToken);
                 return;
             }
 
             if (message is null)
             {
-                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false,
-                    cancellationToken: stoppingToken);
+                await _channel.BasicNackAsync(ea.DeliveryTag, false, false,
+                    stoppingToken);
                 return;
             }
 
             try
             {
                 await ProcessTaskAsync(message.TaskId, stoppingToken);
-                await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
+                await _channel.BasicAckAsync(ea.DeliveryTag, false, stoppingToken);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed processing task {TaskId}, requeueing", message.TaskId);
                 // requeue: false once you have a dead-letter exchange set up —
                 // requeueing forever on a poison message will spin the same job.
-                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true,
-                    cancellationToken: stoppingToken);
+                await _channel.BasicNackAsync(ea.DeliveryTag, false, true,
+                    stoppingToken);
             }
         };
 
         await _channel.BasicConsumeAsync(
-            queue: _options.TaskQueue,
-            autoAck: false,
-            consumer: consumer,
-            cancellationToken: stoppingToken);
+            _options.TaskQueue,
+            false,
+            consumer,
+            stoppingToken);
 
         logger.LogInformation("Listening on queue {Queue}", _options.TaskQueue);
 

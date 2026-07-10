@@ -11,7 +11,8 @@ public class RabbitMqTaskPublisher(
 {
     private readonly RabbitMqOptions _options = options.Value;
 
-    public async Task PublishAsync(TaskMessage message, string routingKey, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(TaskMessage message, string routingKey,
+        CancellationToken cancellationToken = default)
     {
         if (connectionHolder.Connection is not { IsOpen: true } connection)
             throw new InvalidOperationException("RabbitMQ connection is not established yet.");
@@ -28,11 +29,11 @@ public class RabbitMqTaskPublisher(
         };
 
         await channel.BasicPublishAsync(
-            exchange: _options.TaskExchange,
-            routingKey: routingKey,
-            mandatory: false,
-            basicProperties: properties,
-            body: body,
-            cancellationToken: cancellationToken);
+            _options.TaskExchange,
+            routingKey,
+            false,
+            properties,
+            body,
+            cancellationToken);
     }
 }

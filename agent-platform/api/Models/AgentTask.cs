@@ -6,7 +6,7 @@ public enum AgentTaskStatus
     Queued,
     Running,
     Completed,
-    Failed,
+    Failed
 }
 
 // Placeholder table for queued work. One row per user request; RoutingKey

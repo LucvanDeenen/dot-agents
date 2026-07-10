@@ -8,7 +8,8 @@ namespace AgentPlatform.Api.Controllers;
 
 [ApiController]
 [Route("jobs")]
-public class JobsController(AgentDbContext db, ITaskPublisher publisher, ILogger<JobsController> logger) : ControllerBase
+public class JobsController(AgentDbContext db, ITaskPublisher publisher, ILogger<JobsController> logger)
+    : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Create(CreateJobRequest request, CancellationToken cancellationToken)
@@ -27,7 +28,7 @@ public class JobsController(AgentDbContext db, ITaskPublisher publisher, ILogger
         {
             // Routing key must match the binding pattern the topology
             // initializer declared (RabbitMqOptions.TaskRoutingKeyPattern).
-            await publisher.PublishAsync(new TaskMessage(task.Id), routingKey: task.RoutingKey, cancellationToken);
+            await publisher.PublishAsync(new TaskMessage(task.Id), task.RoutingKey, cancellationToken);
             task.Status = AgentTaskStatus.Queued;
             task.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
@@ -41,7 +42,8 @@ public class JobsController(AgentDbContext db, ITaskPublisher publisher, ILogger
             logger.LogError(ex, "Failed to publish task {TaskId} to the task queue", task.Id);
             return Problem(
                 title: "Task saved but not queued",
-                detail: "The task was persisted but could not be published to the task queue. It will need to be retried.",
+                detail:
+                "The task was persisted but could not be published to the task queue. It will need to be retried.",
                 statusCode: StatusCodes.Status202Accepted);
         }
 

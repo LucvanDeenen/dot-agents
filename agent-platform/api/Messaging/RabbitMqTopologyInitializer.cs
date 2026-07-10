@@ -21,7 +21,7 @@ public class RabbitMqTopologyInitializer(
             Port = _options.Port,
             UserName = _options.User,
             Password = _options.Password,
-            VirtualHost = _options.VirtualHost,
+            VirtualHost = _options.VirtualHost
         };
 
         var connection = await factory.CreateConnectionAsync(cancellationToken);
@@ -30,22 +30,22 @@ public class RabbitMqTopologyInitializer(
         await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
         await channel.ExchangeDeclareAsync(
-            exchange: _options.TaskExchange,
-            type: ExchangeType.Topic,
-            durable: true,
+            _options.TaskExchange,
+            ExchangeType.Topic,
+            true,
             cancellationToken: cancellationToken);
 
         await channel.QueueDeclareAsync(
-            queue: _options.TaskQueue,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
+            _options.TaskQueue,
+            true,
+            false,
+            false,
             cancellationToken: cancellationToken);
 
         await channel.QueueBindAsync(
-            queue: _options.TaskQueue,
-            exchange: _options.TaskExchange,
-            routingKey: _options.TaskRoutingKeyPattern,
+            _options.TaskQueue,
+            _options.TaskExchange,
+            _options.TaskRoutingKeyPattern,
             cancellationToken: cancellationToken);
 
         logger.LogInformation(
