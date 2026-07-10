@@ -1,7 +1,6 @@
 using System.Text.Json;
 using AgentPlatform.Api.Data;
 using AgentPlatform.Api.Models;
-using AgentPlatform.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -9,9 +8,7 @@ using RabbitMQ.Client.Events;
 
 namespace AgentPlatform.Api.Messaging;
 
-// Consumes AgentJob.Id messages off _options.TaskQueue and runs them through
-// the same IAgentRunner the polling JobDispatcher used — this replaces that
-// polling loop once you're ready to cut over, they don't need to run together.
+// Consumes AgentTask.Id messages off _options.TaskQueue and updates task state.
 public class TaskQueueListener(
     IOptions<RabbitMqOptions> options,
     RabbitMqConnectionHolder connectionHolder,
@@ -30,7 +27,8 @@ public class TaskQueueListener(
 
         // Only hand this consumer one unacked message at a time — an agent
         // job can run for minutes, no reason to prefetch a backlog.
-        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: stoppingToken);
+        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false,
+            cancellationToken: stoppingToken);
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (_, ea) =>
@@ -43,27 +41,30 @@ public class TaskQueueListener(
             catch (JsonException ex)
             {
                 logger.LogError(ex, "Unparseable task message, dropping. DeliveryTag={DeliveryTag}", ea.DeliveryTag);
-                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
+                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false,
+                    cancellationToken: stoppingToken);
                 return;
             }
 
             if (message is null)
             {
-                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
+                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false,
+                    cancellationToken: stoppingToken);
                 return;
             }
 
             try
             {
-                await ProcessJobAsync(message.JobId, stoppingToken);
+                await ProcessTaskAsync(message.TaskId, stoppingToken);
                 await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed processing job {JobId}, requeueing", message.JobId);
+                logger.LogError(ex, "Failed processing task {TaskId}, requeueing", message.TaskId);
                 // requeue: false once you have a dead-letter exchange set up —
                 // requeueing forever on a poison message will spin the same job.
-                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true, cancellationToken: stoppingToken);
+                await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true,
+                    cancellationToken: stoppingToken);
             }
         };
 
@@ -80,30 +81,28 @@ public class TaskQueueListener(
         await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken);
     }
 
-    private async Task ProcessJobAsync(Guid jobId, CancellationToken cancellationToken)
+    private async Task ProcessTaskAsync(Guid taskId, CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AgentDbContext>();
-        var runner = scope.ServiceProvider.GetRequiredService<IAgentRunner>();
 
-        var job = await db.Jobs.FindAsync([jobId], cancellationToken);
-        if (job is null)
+        var task = await db.AgentTasks
+            .FirstOrDefaultAsync(t => t.Id == taskId, cancellationToken);
+        if (task is null)
         {
-            logger.LogWarning("Job {JobId} not found, skipping", jobId);
+            logger.LogWarning("Task {TaskId} not found, skipping", taskId);
             return;
         }
 
-        job.Status = JobStatus.Running;
-        job.StartedAt = DateTimeOffset.UtcNow;
+        if (task.Status is AgentTaskStatus.Completed or AgentTaskStatus.Failed)
+            return;
+
+        task.Status = AgentTaskStatus.Running;
+        task.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
 
-        var result = await runner.RunAsync(job, cancellationToken);
-
-        job.Status = result.Success ? JobStatus.Succeeded : JobStatus.Failed;
-        job.Result = result.Output;
-        job.Error = result.Error;
-        job.ContainerId = result.ContainerId;
-        job.CompletedAt = DateTimeOffset.UtcNow;
+        task.Status = AgentTaskStatus.Completed;
+        task.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
     }
 
@@ -114,6 +113,7 @@ public class TaskQueueListener(
             await _channel.CloseAsync(cancellationToken);
             _channel.Dispose();
         }
+
         await base.StopAsync(cancellationToken);
     }
 }

@@ -13,54 +13,57 @@ public class JobsController(AgentDbContext db, ITaskPublisher publisher, ILogger
     [HttpPost]
     public async Task<IActionResult> Create(CreateJobRequest request, CancellationToken cancellationToken)
     {
-        var job = new AgentJob
+        var task = new AgentTask
         {
-            Prompt = request.Prompt,
-            RepoUrl = request.RepoUrl,
-            Branch = request.Branch
+            Instruction = request.Prompt,
+            RoutingKey = "task.created",
+            Status = AgentTaskStatus.Pending
         };
 
-        db.Jobs.Add(job);
+        db.AgentTasks.Add(task);
         await db.SaveChangesAsync(cancellationToken);
 
         try
         {
             // Routing key must match the binding pattern the topology
             // initializer declared (RabbitMqOptions.TaskRoutingKeyPattern).
-            await publisher.PublishAsync(new TaskMessage(job.Id), routingKey: "job.created", cancellationToken);
+            await publisher.PublishAsync(new TaskMessage(task.Id), routingKey: task.RoutingKey, cancellationToken);
+            task.Status = AgentTaskStatus.Queued;
+            task.UpdatedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
-            // The job row exists either way — don't lose it because the broker
+            // The task row exists either way — don't lose it because the broker
             // hiccuped. Leave it Pending; a reconciliation sweep or manual
             // republish can pick it up. Don't return 201 with a misleading
             // "queued" implication if this happens, though.
-            logger.LogError(ex, "Failed to publish job {JobId} to the task queue", job.Id);
+            logger.LogError(ex, "Failed to publish task {TaskId} to the task queue", task.Id);
             return Problem(
-                title: "Job saved but not queued",
-                detail: "The job was persisted but could not be published to the task queue. It will need to be retried.",
+                title: "Task saved but not queued",
+                detail: "The task was persisted but could not be published to the task queue. It will need to be retried.",
                 statusCode: StatusCodes.Status202Accepted);
         }
 
-        return CreatedAtAction(nameof(GetById), new { id = job.Id }, job);
+        return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
     }
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var job = await db.Jobs.FindAsync([id], cancellationToken);
-        return job is null ? NotFound() : Ok(job);
+        var task = await db.AgentTasks.FindAsync([id], cancellationToken);
+        return task is null ? NotFound() : Ok(task);
     }
 
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
-        var jobs = await db.Jobs
-            .OrderByDescending(j => j.CreatedAt)
+        var tasks = await db.AgentTasks
+            .OrderByDescending(t => t.CreatedAt)
             .Take(50)
             .ToListAsync(cancellationToken);
 
-        return Ok(jobs);
+        return Ok(tasks);
     }
 }
 

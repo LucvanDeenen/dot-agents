@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AgentPlatform.Api.Models;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 

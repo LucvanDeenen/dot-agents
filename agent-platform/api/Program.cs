@@ -1,14 +1,11 @@
 using AgentPlatform.Api.Data;
 using AgentPlatform.Api.Messaging;
-using AgentPlatform.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AgentDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
-
-builder.Services.AddSingleton<IAgentRunner, ClaudeAgentRunner>();
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
 builder.Services
     .AddOptions<RabbitMqOptions>()
