@@ -1,6 +1,6 @@
 @AgentPlatform = http://localhost:5005
 
-GET {{AgentPlatform}}/health
+GET {{AgentPlatform }}/health
 Accept: application/json
 
 ###
