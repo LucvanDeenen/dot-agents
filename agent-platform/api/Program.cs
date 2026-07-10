@@ -1,35 +1,41 @@
 using AgentPlatform.Api.Data;
 using AgentPlatform.Api.Messaging;
+using AgentPlatform.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
-
 builder.Services.AddDbContext<AgentDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddSingleton<IAgentRunner, ClaudeAgentRunner>();
 
 builder.Services
     .AddOptions<RabbitMqOptions>()
     .Bind(builder.Configuration.GetSection(RabbitMqOptions.SectionName))
     .ValidateDataAnnotations();
 builder.Services.AddSingleton<RabbitMqConnectionHolder>();
+builder.Services.AddSingleton<ITaskPublisher, RabbitMqTaskPublisher>();
+
+// Order matters: the topology (exchange/queue/binding + the shared connection)
+// must exist before the listener tries to consume from it.
 builder.Services.AddHostedService<RabbitMqTopologyInitializer>();
+builder.Services.AddHostedService<TaskQueueListener>();
+
+builder.Services.AddControllers();
+
+// Drop JobDispatcher (the polling version) once TaskQueueListener is doing this job.
+// builder.Services.AddHostedService<JobDispatcher>();
 
 var app = builder.Build();
 
+// Apply migrations on startup — fine for a single-node homelab deployment.
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<AgentDbContext>().Database.Migrate();
+    var db = scope.ServiceProvider.GetRequiredService<AgentDbContext>();
+    db.Database.Migrate();
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
-app.UseHttpsRedirection();
-
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapControllers();
 
 app.Run();
