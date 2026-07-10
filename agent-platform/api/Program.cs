@@ -21,6 +21,7 @@ builder.Services.AddHostedService<RabbitMqTopologyInitializer>();
 builder.Services.AddHostedService<TaskQueueListener>();
 
 builder.Services.AddControllers();
+builder.Services.AddHealthChecks();
 
 // Drop JobDispatcher (the polling version) once TaskQueueListener is doing this job.
 // builder.Services.AddHostedService<JobDispatcher>();
@@ -34,6 +35,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();

@@ -1,0 +1,18 @@
+@AgentPlatform = http://localhost:5005
+
+GET {{AgentPlatform}}/health
+Accept: application/json
+
+###
+
+POST {{AgentPlatform}}/jobs
+Content-Type: application/json
+Accept: application/json
+
+{
+  "prompt": "Review the repository and propose CI pipeline improvements.",
+  "repoUrl": "https://github.com/LucvanDeenen/dot-agents",
+  "branch": "main"
+}
+
+###
