@@ -1,4 +1,4 @@
-namespace AgentPlatform.Api.Messaging;
+namespace AgentPlatform.Infrastructure.Messaging;
 
 public class RabbitMqOptions
 {

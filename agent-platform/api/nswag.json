@@ -3,7 +3,7 @@
   "defaultVariables": null,
   "documentGenerator": {
     "fromDocument": {
-      "json": "spec/openapi.yaml",
+      "json": "spec/agent-platform.yaml",
       "output": null
     }
   },

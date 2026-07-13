@@ -1,13 +1,16 @@
 using System.Text.Json;
-using AgentPlatform.Api.Data;
-using AgentPlatform.Api.Messaging;
-using AgentPlatform.Api.Models;
-using Microsoft.EntityFrameworkCore;
+using AgentPlatform.Application.Abstractions;
+using AgentPlatform.Application.Jobs;
+using AgentPlatform.Infrastructure.Messaging;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace AgentPlatform.Api.Listeners;
+namespace AgentPlatform.Infrastructure.Listeners;
 
 // Consumes AgentTask.Id messages off _options.TaskQueue and updates task state.
 public class TaskQueueListener(
@@ -85,26 +88,8 @@ public class TaskQueueListener(
     private async Task ProcessTaskAsync(Guid taskId, CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AgentDbContext>();
-
-        var task = await db.AgentTasks
-            .FirstOrDefaultAsync(t => t.Id == taskId, cancellationToken);
-        if (task is null)
-        {
-            logger.LogWarning("Task {TaskId} not found, skipping", taskId);
-            return;
-        }
-
-        if (task.Status is AgentTaskStatus.Completed or AgentTaskStatus.Failed)
-            return;
-
-        task.Status = AgentTaskStatus.Running;
-        task.UpdatedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(cancellationToken);
-
-        task.Status = AgentTaskStatus.Completed;
-        task.UpdatedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(cancellationToken);
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        await mediator.Send(new ProcessTaskCommand(taskId), cancellationToken);
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)

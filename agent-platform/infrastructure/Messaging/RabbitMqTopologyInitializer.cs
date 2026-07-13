@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
-namespace AgentPlatform.Api.Messaging;
+namespace AgentPlatform.Infrastructure.Messaging;
 
 // Establishes the shared connection and declares the placeholder task
 // exchange/queue/binding on startup so the topology exists before anything

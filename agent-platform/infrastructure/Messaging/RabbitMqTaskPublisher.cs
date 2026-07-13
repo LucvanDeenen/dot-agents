@@ -1,9 +1,9 @@
 using System.Text.Json;
-using AgentPlatform.Api.Models;
+using AgentPlatform.Application.Abstractions;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
-namespace AgentPlatform.Api.Messaging;
+namespace AgentPlatform.Infrastructure.Messaging;
 
 public class RabbitMqTaskPublisher(
     IOptions<RabbitMqOptions> options,

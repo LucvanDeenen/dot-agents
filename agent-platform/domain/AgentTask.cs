@@ -1,4 +1,4 @@
-namespace AgentPlatform.Api.Models;
+namespace AgentPlatform.Domain;
 
 public enum AgentTaskStatus
 {

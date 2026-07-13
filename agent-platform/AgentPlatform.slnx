@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="api/AgentPlatform.Api.csproj" />
+  <Project Path="application/AgentPlatform.Application.csproj" />
+  <Project Path="domain/AgentPlatform.Domain.csproj" />
+  <Project Path="infrastructure/AgentPlatform.Infrastructure.csproj" />
+</Solution>

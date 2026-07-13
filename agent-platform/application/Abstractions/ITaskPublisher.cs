@@ -1,6 +1,4 @@
-using AgentPlatform.Api.Models;
-
-namespace AgentPlatform.Api.Messaging;
+namespace AgentPlatform.Application.Abstractions;
 
 public interface ITaskPublisher
 {

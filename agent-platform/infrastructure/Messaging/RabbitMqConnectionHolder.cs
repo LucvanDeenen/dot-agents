@@ -1,6 +1,6 @@
 using RabbitMQ.Client;
 
-namespace AgentPlatform.Api.Messaging;
+namespace AgentPlatform.Infrastructure.Messaging;
 
 // Shared connection established by RabbitMqTopologyInitializer at startup.
 // Inject this in future publishers/consumers instead of opening new connections.

@@ -1,9 +1,10 @@
-using AgentPlatform.Api.Models;
+using AgentPlatform.Application.Abstractions;
+using AgentPlatform.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace AgentPlatform.Api.Data;
+namespace AgentPlatform.Infrastructure.Data;
 
-public class AgentDbContext(DbContextOptions<AgentDbContext> options) : DbContext(options)
+public class AgentDbContext(DbContextOptions<AgentDbContext> options) : DbContext(options), IAgentDbContext
 {
     public DbSet<AgentTask> AgentTasks => Set<AgentTask>();
 

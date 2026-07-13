@@ -1,30 +1,15 @@
-using AgentPlatform.Api.Data;
-using AgentPlatform.Api.Listeners;
-using AgentPlatform.Api.Messaging;
+using AgentPlatform.Application;
+using AgentPlatform.Infrastructure;
+using AgentPlatform.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AgentDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
-
-builder.Services
-    .AddOptions<RabbitMqOptions>()
-    .Bind(builder.Configuration.GetSection(RabbitMqOptions.SectionName))
-    .ValidateDataAnnotations();
-builder.Services.AddSingleton<RabbitMqConnectionHolder>();
-builder.Services.AddSingleton<ITaskPublisher, RabbitMqTaskPublisher>();
-
-// Order matters: the topology (exchange/queue/binding + the shared connection)
-// must exist before the listener tries to consume from it.
-builder.Services.AddHostedService<RabbitMqTopologyInitializer>();
-builder.Services.AddHostedService<TaskQueueListener>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
-
-// Drop JobDispatcher (the polling version) once TaskQueueListener is doing this job.
-// builder.Services.AddHostedService<JobDispatcher>();
 
 var app = builder.Build();
 
