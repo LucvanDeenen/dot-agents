@@ -1,0 +1,30 @@
+{
+  "runtime": "Net100",
+  "defaultVariables": null,
+  "documentGenerator": {
+    "fromDocument": {
+      "json": "spec/openapi.yaml",
+      "output": null
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpController": {
+      "namespace": "AgentPlatform.Api.Generated",
+      "controllerBaseClass": "Microsoft.AspNetCore.Mvc.ControllerBase",
+      "controllerStyle": "Abstract",
+      "controllerTarget": "AspNetCore",
+      "operationGenerationMode": "MultipleClientsFromPathSegments",
+      "className": "Jobs",
+      "excludedOperationIds": ["getHealth"],
+      "useActionResultType": true,
+      "useCancellationToken": true,
+      "generateModelValidationAttributes": false,
+      "generateOptionalParameters": true,
+      "jsonLibrary": "SystemTextJson",
+      "generateJsonMethods": false,
+      "generateNullableReferenceTypes": true,
+      "useRequiredKeyword": true,
+      "output": "Generated/JobsController.g.cs"
+    }
+  }
+}

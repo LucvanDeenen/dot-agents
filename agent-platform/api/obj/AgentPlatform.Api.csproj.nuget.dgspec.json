@@ -1,21 +1,21 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj": {}
+    "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj": {
+    "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj",
+        "projectUniqueName": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj",
         "projectName": "AgentPlatform.Api",
-        "projectPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj",
-        "packagesPath": "C:\\Users\\lvdeenen\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\obj\\",
+        "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj",
+        "packagesPath": "C:\\Users\\Luc\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\lvdeenen\\repos\\dot-agents\\NuGet.Config",
-          "C:\\Users\\lvdeenen\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Luc\\repos\\dot-agents\\NuGet.Config",
+          "C:\\Users\\Luc\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -25,6 +25,7 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {}
           }
@@ -39,10 +40,11 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "Microsoft.AspNetCore.OpenApi": {
@@ -54,6 +56,11 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[10.0.9, )"
+            },
+            "NSwag.MSBuild": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[14.*, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
@@ -83,7 +90,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

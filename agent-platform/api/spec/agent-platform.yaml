@@ -1,0 +1,179 @@
+openapi: 3.0.3
+info:
+  title: Agent Platform API
+  version: "1.0"
+  description: >
+    Source-of-truth contract for the Agent Platform API. Controllers and
+    models are generated from this file at build time (see nswag.json) —
+    edit this spec first, then implement the generated abstract controller.
+
+servers:
+  - url: /
+
+tags:
+  - name: System
+  - name: Jobs
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Liveness/readiness probe.
+      responses:
+        "200":
+          description: The service is healthy.
+          content:
+            text/plain:
+              schema:
+                type: string
+        "503":
+          description: The service is unhealthy or degraded.
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /jobs:
+    post:
+      tags: [Jobs]
+      operationId: createJob
+      summary: Create a new agent task and publish it to the task queue.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateJobRequest"
+      responses:
+        "201":
+          description: The task was persisted and published to the task queue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentTask"
+        "202":
+          description: >
+            The task was persisted but could not be published to the task
+            queue and will need to be retried.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "400":
+          description: The request body failed validation (e.g. missing prompt).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ValidationProblemDetails"
+    get:
+      tags: [Jobs]
+      operationId: listJobs
+      summary: List the 50 most recently created agent tasks.
+      responses:
+        "200":
+          description: A page of agent tasks, newest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AgentTask"
+
+  /jobs/{id}:
+    get:
+      tags: [Jobs]
+      operationId: getJobById
+      summary: Get a single agent task by id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The requested agent task.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentTask"
+        "404":
+          description: No agent task exists with the given id.
+
+components:
+  schemas:
+    AgentTaskStatus:
+      type: integer
+      format: int32
+      enum: [0, 1, 2, 3, 4]
+      x-enumNames: [Pending, Queued, Running, Completed, Failed]
+
+    AgentTask:
+      type: object
+      required: [id, routingKey, instruction, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        routingKey:
+          type: string
+        instruction:
+          type: string
+        status:
+          $ref: "#/components/schemas/AgentTaskStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateJobRequest:
+      type: object
+      required: [prompt]
+      properties:
+        prompt:
+          type: string
+        repoUrl:
+          type: string
+          nullable: true
+        branch:
+          type: string
+          nullable: true
+
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          format: int32
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        instance:
+          type: string
+          nullable: true
+      additionalProperties: true
+
+    ValidationProblemDetails:
+      allOf:
+        - $ref: "#/components/schemas/ProblemDetails"
+        - type: object
+          required: [errors]
+          properties:
+            errors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string

@@ -1,24 +1,28 @@
 using AgentPlatform.Api.Data;
+using AgentPlatform.Api.Generated;
 using AgentPlatform.Api.Messaging;
-using AgentPlatform.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TaskEntity = AgentPlatform.Api.Models.AgentTask;
+using TaskEntityStatus = AgentPlatform.Api.Models.AgentTaskStatus;
+using TaskMessage = AgentPlatform.Api.Models.TaskMessage;
 
 namespace AgentPlatform.Api.Controllers;
 
+// Endpoints, routes and DTOs (AgentTask, CreateJobRequest, ...) live in
+// Generated/JobsController.g.cs, produced from spec/openapi.yaml —
+// edit the spec, not this file, to change the contract.
 [ApiController]
-[Route("jobs")]
 public class JobsController(AgentDbContext db, ITaskPublisher publisher, ILogger<JobsController> logger)
-    : ControllerBase
+    : JobsControllerBase
 {
-    [HttpPost]
-    public async Task<IActionResult> Create(CreateJobRequest request, CancellationToken cancellationToken)
+    public override async Task<ActionResult<AgentTask>> JobsPost(CreateJobRequest body, CancellationToken cancellationToken)
     {
-        var task = new AgentTask
+        var task = new TaskEntity
         {
-            Instruction = request.Prompt,
+            Instruction = body.Prompt,
             RoutingKey = "task.created",
-            Status = AgentTaskStatus.Pending
+            Status = TaskEntityStatus.Pending
         };
 
         db.AgentTasks.Add(task);
@@ -29,7 +33,7 @@ public class JobsController(AgentDbContext db, ITaskPublisher publisher, ILogger
             // Routing key must match the binding pattern the topology
             // initializer declared (RabbitMqOptions.TaskRoutingKeyPattern).
             await publisher.PublishAsync(new TaskMessage(task.Id), task.RoutingKey, cancellationToken);
-            task.Status = AgentTaskStatus.Queued;
+            task.Status = TaskEntityStatus.Queued;
             task.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -47,26 +51,32 @@ public class JobsController(AgentDbContext db, ITaskPublisher publisher, ILogger
                 statusCode: StatusCodes.Status202Accepted);
         }
 
-        return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
+        return Created($"/jobs/{task.Id}", ToDto(task));
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    public override async Task<ActionResult<AgentTask>> JobsGet(Guid id, CancellationToken cancellationToken)
     {
         var task = await db.AgentTasks.FindAsync([id], cancellationToken);
-        return task is null ? NotFound() : Ok(task);
+        return task is null ? NotFound() : ToDto(task);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> List(CancellationToken cancellationToken)
+    public override async Task<ActionResult<ICollection<AgentTask>>> JobsGet(CancellationToken cancellationToken)
     {
         var tasks = await db.AgentTasks
             .OrderByDescending(t => t.CreatedAt)
             .Take(50)
             .ToListAsync(cancellationToken);
 
-        return Ok(tasks);
+        return tasks.Select(ToDto).ToList();
     }
-}
 
-public record CreateJobRequest(string Prompt, string? RepoUrl, string? Branch);
+    private static AgentTask ToDto(TaskEntity task) => new()
+    {
+        Id = task.Id,
+        RoutingKey = task.RoutingKey,
+        Instruction = task.Instruction,
+        Status = (AgentTaskStatus)(int)task.Status,
+        CreatedAt = task.CreatedAt,
+        UpdatedAt = task.UpdatedAt
+    };
+}
