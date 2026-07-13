@@ -16,20 +16,11 @@ public class JobsController(IMediator mediator) : JobsControllerBase
 {
     public override async Task<ActionResult<AgentTask>> JobsPost(CreateJobRequest body, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new CreateJobCommand(body.Prompt, body.RepoUrl, body.Branch), cancellationToken);
-
-        if (!result.Published)
-        {
-            // The task row exists either way — don't lose it because the broker
-            // hiccuped. Don't return 201 with a misleading "queued" implication.
-            return Problem(
-                title: "Task saved but not queued",
-                detail:
-                "The task was persisted but could not be published to the task queue. It will need to be retried.",
-                statusCode: StatusCodes.Status202Accepted);
-        }
-
-        return Created($"/jobs/{result.Task.Id}", ToDto(result.Task));
+        // If the broker publish fails, CreateJobCommandHandler throws
+        // TaskPublishFailedException, which TaskPublishFailedExceptionHandler
+        // turns into the 202 response — no branching needed here.
+        var task = await mediator.Send(new CreateJobCommand(body.Prompt, body.RepoUrl, body.Branch), cancellationToken);
+        return Created($"/jobs/{task.Id}", ToDto(task));
     }
 
     public override async Task<ActionResult<AgentTask>> JobsGet(Guid id, CancellationToken cancellationToken)

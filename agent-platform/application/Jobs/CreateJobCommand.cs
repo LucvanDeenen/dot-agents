@@ -5,16 +5,14 @@ using Microsoft.Extensions.Logging;
 
 namespace AgentPlatform.Application.Jobs;
 
-public sealed record CreateJobCommand(string Prompt, string? RepoUrl, string? Branch) : IRequest<CreateJobResult>;
-
-public sealed record CreateJobResult(AgentTask Task, bool Published);
+public sealed record CreateJobCommand(string Prompt, string? RepoUrl, string? Branch) : IRequest<AgentTask>;
 
 public sealed class CreateJobCommandHandler(
     IAgentDbContext db,
     ITaskPublisher publisher,
-    ILogger<CreateJobCommandHandler> logger) : IRequestHandler<CreateJobCommand, CreateJobResult>
+    ILogger<CreateJobCommandHandler> logger) : IRequestHandler<CreateJobCommand, AgentTask>
 {
-    public async Task<CreateJobResult> Handle(CreateJobCommand request, CancellationToken cancellationToken)
+    public async Task<AgentTask> Handle(CreateJobCommand request, CancellationToken cancellationToken)
     {
         var task = new AgentTask
         {
@@ -41,9 +39,9 @@ public sealed class CreateJobCommandHandler(
             // hiccuped. Leave it Pending; a reconciliation sweep or manual
             // republish can pick it up.
             logger.LogError(ex, "Failed to publish task {TaskId} to the task queue", task.Id);
-            return new CreateJobResult(task, Published: false);
+            throw new TaskPublishFailedException(task, ex);
         }
 
-        return new CreateJobResult(task, Published: true);
+        return task;
     }
 }

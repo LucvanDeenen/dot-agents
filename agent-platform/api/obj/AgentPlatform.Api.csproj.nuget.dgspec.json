@@ -28,11 +28,11 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
-                "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj"
+              "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
+                "projectPath": "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj"
               },
-              "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj": {
-                "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj"
+              "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj": {
+                "projectPath": "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj"
               }
             }
           }
@@ -501,17 +501,17 @@
         }
       }
     },
-    "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
+    "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj",
+        "projectUniqueName": "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj",
         "projectName": "AgentPlatform.Application",
-        "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj",
+        "projectPath": "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj",
         "packagesPath": "C:\\Users\\Luc\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\obj\\",
+        "outputPath": "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Luc\\repos\\dot-agents\\NuGet.Config",
+          "c:\\Users\\Luc\\repos\\dot-agents\\NuGet.Config",
           "C:\\Users\\Luc\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
@@ -1187,17 +1187,17 @@
         }
       }
     },
-    "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj": {
+    "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj",
+        "projectUniqueName": "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj",
         "projectName": "AgentPlatform.Infrastructure",
-        "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj",
+        "projectPath": "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj",
         "packagesPath": "C:\\Users\\Luc\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\obj\\",
+        "outputPath": "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Luc\\repos\\dot-agents\\NuGet.Config",
+          "c:\\Users\\Luc\\repos\\dot-agents\\NuGet.Config",
           "C:\\Users\\Luc\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
@@ -1211,8 +1211,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
-                "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj"
+              "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
+                "projectPath": "c:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj"
               }
             }
           }
