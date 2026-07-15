@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import Page from "@/components/layout/Page.vue";
 import {
   AgentTaskStatus,
   createJob,
   listJobs,
   JobNotQueuedError,
+  subscribeToJobStatus,
   type AgentTask,
+  type JobStatusChangedEvent,
 } from "@/api/agentPlatform";
 
 const statusLabel: Record<AgentTaskStatus, string> = {
-  [AgentTaskStatus.Pending]: "Pending",
+  [AgentTaskStatus.Pending]: "Requested",
   [AgentTaskStatus.Queued]: "Queued",
-  [AgentTaskStatus.Running]: "Running",
+  [AgentTaskStatus.Running]: "In progress",
   [AgentTaskStatus.Completed]: "Completed",
   [AgentTaskStatus.Failed]: "Failed",
 };
@@ -26,6 +28,18 @@ const warningMessage = ref("");
 
 const jobs = ref<AgentTask[]>([]);
 const loadingJobs = ref(false);
+let stopStatusSubscription: (() => void) | null = null;
+
+function applyJobStatusUpdate(event: JobStatusChangedEvent) {
+  const index = jobs.value.findIndex((job) => job.id === event.taskId);
+  if (index === -1) return;
+
+  jobs.value[index] = {
+    ...jobs.value[index],
+    status: event.status,
+    updatedAt: event.updatedAt,
+  };
+}
 
 async function refreshJobs() {
   loadingJobs.value = true;
@@ -66,7 +80,15 @@ async function submitJob() {
   }
 }
 
-onMounted(refreshJobs);
+onMounted(async () => {
+  await refreshJobs();
+  stopStatusSubscription = subscribeToJobStatus(applyJobStatusUpdate);
+});
+
+onUnmounted(() => {
+  stopStatusSubscription?.();
+  stopStatusSubscription = null;
+});
 </script>
 
 <template>
