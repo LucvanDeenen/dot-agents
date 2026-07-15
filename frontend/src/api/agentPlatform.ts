@@ -21,6 +21,12 @@ export interface CreateJobRequest {
   branch?: string | null;
 }
 
+export interface JobStatusChangedEvent {
+  taskId: string;
+  status: AgentTaskStatus;
+  updatedAt: string | null;
+}
+
 export interface ProblemDetails {
   title?: string | null;
   detail?: string | null;
@@ -52,4 +58,19 @@ export async function createJob(request: CreateJobRequest): Promise<AgentTask> {
   if (response.status === 202) throw new JobNotQueuedError(await problemMessage(response));
   if (!response.ok) throw new Error(await problemMessage(response));
   return response.json();
+}
+
+export function subscribeToJobStatus(onStatusChanged: (event: JobStatusChangedEvent) => void): () => void {
+  const source = new EventSource("/jobs/events");
+
+  source.addEventListener("job-status", (rawEvent) => {
+    const event = rawEvent as MessageEvent<string>;
+    try {
+      onStatusChanged(JSON.parse(event.data) as JobStatusChangedEvent);
+    } catch {
+      // Ignore malformed events and keep the stream alive.
+    }
+  });
+
+  return () => source.close();
 }

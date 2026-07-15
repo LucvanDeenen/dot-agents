@@ -10,7 +10,10 @@ public sealed record ProcessTaskCommand(Guid TaskId) : IRequest;
 
 // Invoked by TaskQueueListener once it dequeues a task message. Runs the
 // (currently placeholder) agent work and advances task status.
-public sealed class ProcessTaskCommandHandler(IAgentDbContext db, ILogger<ProcessTaskCommandHandler> logger)
+public sealed class ProcessTaskCommandHandler(
+    IAgentDbContext db,
+    IJobStatusNotifier statusNotifier,
+    ILogger<ProcessTaskCommandHandler> logger)
     : IRequestHandler<ProcessTaskCommand>
 {
     public async Task Handle(ProcessTaskCommand request, CancellationToken cancellationToken)
@@ -30,9 +33,31 @@ public sealed class ProcessTaskCommandHandler(IAgentDbContext db, ILogger<Proces
         task.Status = AgentTaskStatus.Running;
         task.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        await statusNotifier.NotifyStatusChangedAsync(task, cancellationToken);
 
-        task.Status = AgentTaskStatus.Completed;
-        task.UpdatedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await RunAgentWorkAsync(task, cancellationToken);
+
+            task.Status = AgentTaskStatus.Completed;
+            task.UpdatedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+            await statusNotifier.NotifyStatusChangedAsync(task, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Task {TaskId} failed during processing", task.Id);
+
+            task.Status = AgentTaskStatus.Failed;
+            task.UpdatedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+            await statusNotifier.NotifyStatusChangedAsync(task, cancellationToken);
+        }
+    }
+
+    private static Task RunAgentWorkAsync(AgentTask task, CancellationToken cancellationToken)
+    {
+        // Placeholder for real agent execution.
+        return Task.CompletedTask;
     }
 }

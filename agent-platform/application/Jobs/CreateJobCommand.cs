@@ -10,6 +10,7 @@ public sealed record CreateJobCommand(string Prompt, string? RepoUrl, string? Br
 public sealed class CreateJobCommandHandler(
     IAgentDbContext db,
     ITaskPublisher publisher,
+    IJobStatusNotifier statusNotifier,
     ILogger<CreateJobCommandHandler> logger) : IRequestHandler<CreateJobCommand, AgentTask>
 {
     public async Task<AgentTask> Handle(CreateJobCommand request, CancellationToken cancellationToken)
@@ -23,6 +24,7 @@ public sealed class CreateJobCommandHandler(
 
         db.AgentTasks.Add(task);
         await db.SaveChangesAsync(cancellationToken);
+        await statusNotifier.NotifyStatusChangedAsync(task, cancellationToken);
 
         try
         {
@@ -32,6 +34,7 @@ public sealed class CreateJobCommandHandler(
             task.Status = AgentTaskStatus.Queued;
             task.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
+            await statusNotifier.NotifyStatusChangedAsync(task, cancellationToken);
         }
         catch (Exception ex)
         {

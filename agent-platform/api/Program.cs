@@ -1,4 +1,6 @@
+using AgentPlatform.Api.Notifications;
 using AgentPlatform.Api.ExceptionHandling;
+using AgentPlatform.Application.Abstractions;
 using AgentPlatform.Application;
 using AgentPlatform.Infrastructure;
 using AgentPlatform.Infrastructure.Data;
@@ -8,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddSingleton<JobStatusBroadcaster>();
+builder.Services.AddSingleton<IJobStatusNotifier, JobStatusNotifier>();
 
 builder.Services.AddExceptionHandler<TaskPublishFailedExceptionHandler>();
 builder.Services.AddProblemDetails();
