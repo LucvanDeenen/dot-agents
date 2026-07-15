@@ -8,6 +8,11 @@ namespace AgentPlatform.Api.Controllers;
 [Route("jobs/events")]
 public sealed class JobEventsController(JobStatusBroadcaster broadcaster) : ControllerBase
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     [HttpGet]
     public async Task Stream(CancellationToken cancellationToken)
     {
@@ -18,7 +23,7 @@ public sealed class JobEventsController(JobStatusBroadcaster broadcaster) : Cont
 
         await foreach (var update in subscription.Reader.ReadAllAsync(cancellationToken))
         {
-            var payload = JsonSerializer.Serialize(update);
+            var payload = JsonSerializer.Serialize(update, JsonOptions);
             await Response.WriteAsync("event: job-status\n", cancellationToken);
             await Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
