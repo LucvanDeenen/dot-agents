@@ -804,7 +804,7 @@
       "outputPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\lvdeenen\\repos\\dot-agents\\NuGet.Config",
+        "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\NuGet.Config",
         "C:\\Users\\lvdeenen\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
