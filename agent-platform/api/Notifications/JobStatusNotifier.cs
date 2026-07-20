@@ -7,7 +7,8 @@ public sealed class JobStatusNotifier(JobStatusBroadcaster broadcaster) : IJobSt
 {
     public Task NotifyStatusChangedAsync(AgentTask task, CancellationToken cancellationToken = default)
     {
-        var update = new JobStatusChangedEvent(task.Id, task.Status, task.UpdatedAt);
+        var update = new JobStatusChangedEvent(task.Id, task.Status, task.UpdatedAt,
+            task.AgentId, task.Agent?.Name, task.Output);
         return broadcaster.PublishAsync(update, cancellationToken).AsTask();
     }
 }

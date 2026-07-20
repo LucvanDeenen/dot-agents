@@ -1,21 +1,21 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj": {}
+    "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj": {
+    "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj",
+        "projectUniqueName": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj",
         "projectName": "AgentPlatform.Api",
-        "projectPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj",
-        "packagesPath": "C:\\Users\\lvdeenen\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\api\\obj\\",
+        "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\AgentPlatform.Api.csproj",
+        "packagesPath": "C:\\Users\\Luc\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\api\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\NuGet.Config",
-          "C:\\Users\\lvdeenen\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\NuGet.Config",
+          "C:\\Users\\Luc\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -25,13 +25,14 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
-                "projectPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj"
+              "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
+                "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj"
               },
-              "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj": {
-                "projectPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj"
+              "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj": {
+                "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj"
               }
             }
           }
@@ -46,13 +47,19 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[10.0.9, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "suppressParent": "All",
               "target": "Package",
               "version": "[10.0.9, )"
             },
@@ -81,7 +88,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
@@ -499,18 +506,18 @@
         }
       }
     },
-    "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
+    "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj",
+        "projectUniqueName": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj",
         "projectName": "AgentPlatform.Application",
-        "projectPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj",
-        "packagesPath": "C:\\Users\\lvdeenen\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\application\\obj\\",
+        "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj",
+        "packagesPath": "C:\\Users\\Luc\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\NuGet.Config",
-          "C:\\Users\\lvdeenen\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\NuGet.Config",
+          "C:\\Users\\Luc\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -520,10 +527,11 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj": {
-                "projectPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj"
+              "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj": {
+                "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj"
               }
             }
           }
@@ -538,10 +546,11 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "MediatR": {
@@ -569,7 +578,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -847,18 +856,18 @@
         }
       }
     },
-    "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj": {
+    "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj",
+        "projectUniqueName": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj",
         "projectName": "AgentPlatform.Domain",
-        "projectPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj",
-        "packagesPath": "C:\\Users\\lvdeenen\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\domain\\obj\\",
+        "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\domain\\AgentPlatform.Domain.csproj",
+        "packagesPath": "C:\\Users\\Luc\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\domain\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\NuGet.Config",
-          "C:\\Users\\lvdeenen\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\NuGet.Config",
+          "C:\\Users\\Luc\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -868,6 +877,7 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {}
           }
@@ -882,10 +892,11 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "imports": [
             "net461",
@@ -903,7 +914,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -1181,18 +1192,18 @@
         }
       }
     },
-    "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj": {
+    "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj",
+        "projectUniqueName": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj",
         "projectName": "AgentPlatform.Infrastructure",
-        "projectPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\lvdeenen\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\infrastructure\\obj\\",
+        "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\AgentPlatform.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\Luc\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\NuGet.Config",
-          "C:\\Users\\lvdeenen\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\NuGet.Config",
+          "C:\\Users\\Luc\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -1202,10 +1213,11 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
-                "projectPath": "C:\\Users\\lvdeenen\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj"
+              "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj": {
+                "projectPath": "C:\\Users\\Luc\\repos\\dot-agents\\agent-platform\\application\\AgentPlatform.Application.csproj"
               }
             }
           }
@@ -1220,12 +1232,17 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
+            "Docker.DotNet": {
+              "target": "Package",
+              "version": "[3.125.15, )"
+            },
             "MediatR": {
               "target": "Package",
               "version": "[12.*, )"
@@ -1281,7 +1298,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",

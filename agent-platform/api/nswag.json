@@ -14,7 +14,7 @@
       "controllerStyle": "Abstract",
       "controllerTarget": "AspNetCore",
       "operationGenerationMode": "MultipleClientsFromPathSegments",
-      "className": "Jobs",
+      "className": "Api",
       "excludedOperationIds": ["getHealth"],
       "useActionResultType": true,
       "useCancellationToken": true,
@@ -24,7 +24,7 @@
       "generateJsonMethods": false,
       "generateNullableReferenceTypes": true,
       "useRequiredKeyword": true,
-      "output": "Generated/JobsController.g.cs"
+      "output": "Generated/Controllers.g.cs"
     }
   }
 }

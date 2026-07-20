@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AgentPlatform.Application.Abstractions;
 using AgentPlatform.Application.Jobs;
+using AgentPlatform.Infrastructure.AgentRunning;
 using AgentPlatform.Infrastructure.Messaging;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,11 +16,13 @@ namespace AgentPlatform.Infrastructure.Listeners;
 // Consumes AgentTask.Id messages off _options.TaskQueue and updates task state.
 public class TaskQueueListener(
     IOptions<RabbitMqOptions> options,
+    IOptions<AgentRunnerOptions> runnerOptions,
     RabbitMqConnectionHolder connectionHolder,
     IServiceScopeFactory scopeFactory,
     ILogger<TaskQueueListener> logger) : BackgroundService
 {
     private readonly RabbitMqOptions _options = options.Value;
+    private readonly ushort _maxConcurrency = (ushort)Math.Max(1, runnerOptions.Value.MaxConcurrency);
     private IChannel? _channel;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,11 +30,19 @@ public class TaskQueueListener(
         if (connectionHolder.Connection is not { IsOpen: true } connection)
             throw new InvalidOperationException("RabbitMQ connection is not established yet.");
 
-        _channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        // Dispatch handlers concurrently up to the runner's container cap —
+        // any surplus waits on the runner's semaphore, so there's no point
+        // pulling more messages than that off the queue either.
+        _channel = await connection.CreateChannelAsync(
+            new CreateChannelOptions(
+                publisherConfirmationsEnabled: false,
+                publisherConfirmationTrackingEnabled: false,
+                consumerDispatchConcurrency: _maxConcurrency),
+            stoppingToken);
 
-        // Only hand this consumer one unacked message at a time — an agent
-        // job can run for minutes, no reason to prefetch a backlog.
-        await _channel.BasicQosAsync(0, 1, false,
+        // Agent runs take minutes; only prefetch as many unacked messages as
+        // we can actually work on.
+        await _channel.BasicQosAsync(0, _maxConcurrency, false,
             stoppingToken);
 
         var consumer = new AsyncEventingBasicConsumer(_channel);

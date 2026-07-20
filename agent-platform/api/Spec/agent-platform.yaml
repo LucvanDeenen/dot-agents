@@ -13,6 +13,8 @@ servers:
 tags:
   - name: System
   - name: Jobs
+  - name: Agents
+  - name: Skills
 
 paths:
   /health:
@@ -101,6 +103,238 @@ paths:
                 $ref: "#/components/schemas/AgentTask"
         "404":
           description: No agent task exists with the given id.
+    delete:
+      tags: [Jobs]
+      operationId: deleteJob
+      summary: Delete an agent task. Tasks that are currently running cannot be deleted.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: The task was deleted.
+        "404":
+          description: No agent task exists with the given id.
+        "409":
+          description: The task is currently running and cannot be deleted.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+
+  /agents:
+    get:
+      tags: [Agents]
+      operationId: listAgents
+      summary: List all agent definitions (skills included).
+      responses:
+        "200":
+          description: All configured agents.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+    post:
+      tags: [Agents]
+      operationId: createAgent
+      summary: Create a new agent definition.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAgentRequest"
+      responses:
+        "201":
+          description: The created agent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "400":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ValidationProblemDetails"
+
+  /agents/{id}:
+    get:
+      tags: [Agents]
+      operationId: getAgentById
+      summary: Get a single agent by id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The requested agent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "404":
+          description: No agent exists with the given id.
+    put:
+      tags: [Agents]
+      operationId: updateAgent
+      summary: Replace an agent definition.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAgentRequest"
+      responses:
+        "200":
+          description: The updated agent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "404":
+          description: No agent exists with the given id.
+    delete:
+      tags: [Agents]
+      operationId: deleteAgent
+      summary: Delete an agent definition.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: The agent was deleted.
+        "404":
+          description: No agent exists with the given id.
+
+  /skills:
+    get:
+      tags: [Skills]
+      operationId: listSkills
+      summary: List all skill definitions.
+      responses:
+        "200":
+          description: All configured skills.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Skill"
+    post:
+      tags: [Skills]
+      operationId: createSkill
+      summary: Create a new skill definition.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertSkillRequest"
+      responses:
+        "201":
+          description: The created skill.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "400":
+          description: The request body failed validation.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ValidationProblemDetails"
+
+  /skills/{id}:
+    get:
+      tags: [Skills]
+      operationId: getSkillById
+      summary: Get a single skill by id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The requested skill.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "404":
+          description: No skill exists with the given id.
+    put:
+      tags: [Skills]
+      operationId: updateSkill
+      summary: Replace a skill definition.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertSkillRequest"
+      responses:
+        "200":
+          description: The updated skill.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Skill"
+        "404":
+          description: No skill exists with the given id.
+    delete:
+      tags: [Skills]
+      operationId: deleteSkill
+      summary: Delete a skill definition. Fails while agents still reference it.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: The skill was deleted.
+        "404":
+          description: No skill exists with the given id.
+        "409":
+          description: The skill is still referenced by one or more agents.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
 
 components:
   schemas:
@@ -130,6 +364,22 @@ components:
           type: string
           format: date-time
           nullable: true
+        agentId:
+          type: string
+          format: uuid
+          nullable: true
+        agentName:
+          type: string
+          nullable: true
+        repoUrl:
+          type: string
+          nullable: true
+        branch:
+          type: string
+          nullable: true
+        output:
+          type: string
+          nullable: true
 
     CreateJobRequest:
       type: object
@@ -143,6 +393,114 @@ components:
         branch:
           type: string
           nullable: true
+        agentId:
+          description: >
+            Pin the task to a specific agent. When omitted, the dispatcher
+            resolves an agent by matching routingKey against each enabled
+            agent's routing-key pattern.
+          type: string
+          format: uuid
+          nullable: true
+        routingKey:
+          description: Topic routing key for the task; defaults to task.created.
+          type: string
+          nullable: true
+
+    Agent:
+      type: object
+      required: [id, name, systemPrompt, allowedTools, routingKeyPattern, enabled, createdAt, skills]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        systemPrompt:
+          type: string
+        allowedTools:
+          type: array
+          items:
+            type: string
+        routingKeyPattern:
+          type: string
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        skills:
+          type: array
+          items:
+            $ref: "#/components/schemas/Skill"
+
+    UpsertAgentRequest:
+      type: object
+      required: [name, systemPrompt, routingKeyPattern]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        systemPrompt:
+          type: string
+        allowedTools:
+          type: array
+          items:
+            type: string
+          nullable: true
+        routingKeyPattern:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+        skillIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+
+    Skill:
+      type: object
+      required: [id, name, instructions, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        instructions:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    UpsertSkillRequest:
+      type: object
+      required: [name, instructions]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        instructions:
+          type: string
 
     ProblemDetails:
       type: object

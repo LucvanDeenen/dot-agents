@@ -1,11 +1,17 @@
 using AgentPlatform.Application.Abstractions;
 using AgentPlatform.Domain;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace AgentPlatform.Application.Jobs;
 
-public sealed record CreateJobCommand(string Prompt, string? RepoUrl, string? Branch) : IRequest<AgentTask>;
+public sealed record CreateJobCommand(
+    string Prompt,
+    string? RepoUrl,
+    string? Branch,
+    Guid? AgentId,
+    string? RoutingKey) : IRequest<AgentTask>;
 
 public sealed class CreateJobCommandHandler(
     IAgentDbContext db,
@@ -15,11 +21,24 @@ public sealed class CreateJobCommandHandler(
 {
     public async Task<AgentTask> Handle(CreateJobCommand request, CancellationToken cancellationToken)
     {
+        Guid? agentId = null;
+        if (request.AgentId is { } requestedAgentId)
+        {
+            var agentExists = await db.Agents.AnyAsync(a => a.Id == requestedAgentId, cancellationToken);
+            if (agentExists)
+                agentId = requestedAgentId;
+            else
+                logger.LogWarning("Requested agent {AgentId} does not exist; task will be dispatched by routing key", requestedAgentId);
+        }
+
         var task = new AgentTask
         {
             Instruction = request.Prompt,
-            RoutingKey = "task.created",
-            Status = AgentTaskStatus.Pending
+            RoutingKey = NormalizeRoutingKey(request.RoutingKey),
+            Status = AgentTaskStatus.Pending,
+            AgentId = agentId,
+            RepoUrl = request.RepoUrl,
+            Branch = request.Branch
         };
 
         db.AgentTasks.Add(task);
@@ -46,5 +65,14 @@ public sealed class CreateJobCommandHandler(
         }
 
         return task;
+    }
+
+    // The queue binding only matches task.* keys — force the prefix so a
+    // custom key can't silently route into the void.
+    private static string NormalizeRoutingKey(string? routingKey)
+    {
+        var key = routingKey?.Trim();
+        if (string.IsNullOrEmpty(key)) return "task.created";
+        return key.StartsWith("task.", StringComparison.Ordinal) ? key : $"task.{key}";
     }
 }

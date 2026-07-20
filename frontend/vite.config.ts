@@ -20,6 +20,16 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        "/agents": {
+          target: env.VITE_AGENT_API_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        "/skills": {
+          target: env.VITE_AGENT_API_URL,
+          changeOrigin: true,
+          secure: false,
+        },
         "/health": {
           target: env.VITE_AGENT_API_URL,
           changeOrigin: true,

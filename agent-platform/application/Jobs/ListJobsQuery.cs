@@ -11,6 +11,7 @@ public sealed class ListJobsQueryHandler(IAgentDbContext db) : IRequestHandler<L
 {
     public async Task<List<AgentTask>> Handle(ListJobsQuery request, CancellationToken cancellationToken)
         => await db.AgentTasks
+            .Include(t => t.Agent)
             .OrderByDescending(t => t.CreatedAt)
             .Take(50)
             .ToListAsync(cancellationToken);

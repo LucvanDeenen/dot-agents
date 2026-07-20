@@ -56,6 +56,9 @@ kill_port() {
 # ── Backend (.NET API) ────────────────────────────────────────────────────────
 if [[ "$MODE" == "all" || "$MODE" == "backend" ]]; then
     kill_port 5005
+    # Expose infra/.env values (notably CLAUDE_CODE_OAUTH_TOKEN) to the API so
+    # the Docker agent runner can pass the token into agent containers.
+    set -a; source "$SCRIPT_DIR/infra/.env"; set +a
     echo "Starting backend (dotnet run)..."
     pushd "$SCRIPT_DIR/agent-platform/api" > /dev/null
     dotnet run --launch-profile http &

@@ -1,4 +1,5 @@
 using AgentPlatform.Application.Abstractions;
+using AgentPlatform.Infrastructure.AgentRunning;
 using AgentPlatform.Infrastructure.Data;
 using AgentPlatform.Infrastructure.Listeners;
 using AgentPlatform.Infrastructure.Messaging;
@@ -23,6 +24,17 @@ public static class DependencyInjection
             .ValidateDataAnnotations();
         services.AddSingleton<RabbitMqConnectionHolder>();
         services.AddSingleton<ITaskPublisher, RabbitMqTaskPublisher>();
+
+        services.AddOptions<AgentRunnerOptions>()
+            .Bind(configuration.GetSection(AgentRunnerOptions.SectionName))
+            .PostConfigure(options =>
+            {
+                // Convenience fallback: the token from `claude setup-token` is
+                // usually exported as an env var rather than put in appsettings.
+                if (string.IsNullOrWhiteSpace(options.ClaudeCodeOAuthToken))
+                    options.ClaudeCodeOAuthToken = Environment.GetEnvironmentVariable("CLAUDE_CODE_OAUTH_TOKEN");
+            });
+        services.AddSingleton<IAgentRunner, DockerAgentRunner>();
 
         // Order matters: the topology (exchange/queue/binding + the shared connection)
         // must exist before the listener tries to consume from it.
