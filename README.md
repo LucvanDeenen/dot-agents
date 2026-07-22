@@ -41,7 +41,10 @@ frontend POST /jobs ──► Postgres row (Pending) ──► publish to agent.
 
 ## Out of scope (post-POC)
 
-- Auth on the API (frontend auth exists via `auth-client`; the API is open on localhost).
+- Auth, end to end. The API is open, and the frontend's `auth-client` plugin was
+  registered but unused (and pulled a private repo over git+ssh that CI can't
+  clone), so it was removed until auth is actually implemented. Deployed access
+  is gated by the Cloudflare tunnel only.
 - Multi-tenancy / other users plugging in their own subscriptions.
 - Real horizontal auto-scaling (Kubernetes, multiple hosts) and a separate dispatcher service.
 - Dead-letter queue / retry policies beyond the current requeue behaviour.
@@ -52,7 +55,8 @@ frontend POST /jobs ──► Postgres row (Pending) ──► publish to agent.
 - `frontend/` — Vue app (Tasks / Agents / Board).
 - `agent-platform/` — .NET solution: `api` (spec-first controllers via NSwag — edit `api/Spec/agent-platform.yaml`, not the generated code), `application` (MediatR handlers), `domain`, `infrastructure` (EF Core + RabbitMQ + Docker runner).
 - `agent-runner/` — Dockerfile + entrypoint for the per-task Claude Code container.
-- `infra/` — docker-compose for Postgres + RabbitMQ.
+- `infra/` — docker-compose for Postgres + RabbitMQ (local development only).
+- `.github/workflows/publish.yml` — builds and pushes the three deployable images.
 
 ## Local development
 
@@ -67,6 +71,31 @@ docker build -t agent-runner:local agent-runner/
 - Frontend: http://localhost:3000 — API: http://localhost:5005
 - RabbitMQ management UI: http://localhost:15673 (AMQP on 5673; remapped from 5672/15672 to avoid clashes).
 - Get a subscription token with `claude setup-token` and put it in `infra/.env` as `CLAUDE_CODE_OAUTH_TOKEN`.
+
+## Deployment (Raspberry Pi)
+
+Images are built for `linux/amd64` + `linux/arm64` and pushed to GHCR on every
+push to `main` (or via **Run workflow** manually — note that only `main` gets
+the `:latest` tag the Pi pulls):
+
+| Image | Purpose |
+|-------|---------|
+| `ghcr.io/lucvandeenen/dot-agents/agent-platform-api` | API + dispatcher |
+| `ghcr.io/lucvandeenen/dot-agents/frontend` | Vue app behind nginx (also proxies the API) |
+| `ghcr.io/lucvandeenen/dot-agents/agent-runner` | Per-task Claude Code container |
+
+The Pi-side stack lives in the homelab config repo at `dot-conf/infra/dot-agents/`
+(Postgres, RabbitMQ, API, frontend; Traefik-routed at `agents.dedeen.dev`) and is
+deployed by `dot-infra/install.sh`. Setup steps — GHCR login, the Claude
+subscription token, and the `.env` — are documented in that stack's `README.md`.
+
+Two things worth knowing before deploying:
+
+- The API mounts `/var/run/docker.sock` to spawn agent containers. That is
+  root-equivalent access to the host, and an agent run executes arbitrary code.
+- Agent containers are started as siblings on the host engine, so they are not
+  part of the compose stack. Find them with
+  `docker ps --filter label=agent-platform.task-id`.
 
 ## Roadmap
 

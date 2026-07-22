@@ -1,0 +1,64 @@
+name: Publish images
+
+# Builds and pushes the three deployable images to GHCR as multi-arch
+# (amd64 for local use, arm64 for the Raspberry Pi):
+#   ghcr.io/lucvandeenen/dot-agents/agent-platform-api
+#   ghcr.io/lucvandeenen/dot-agents/frontend
+#   ghcr.io/lucvandeenen/dot-agents/agent-runner
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: agent-platform-api
+            context: agent-platform
+          - name: frontend
+            context: frontend
+          - name: agent-runner
+            context: agent-runner
+    steps:
+      - uses: actions/checkout@v4
+
+      # QEMU covers the runtime stages that must assemble natively on arm64;
+      # the API and frontend build stages cross-compile on the host arch.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/${{ matrix.name }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

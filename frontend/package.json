@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@heroicons/vue": "^2.1.1",
-    "auth-client": "LucvanDeenen/auth-client.git#lib-v1.3.5",
     "vue": "^3.4.38"
   },
   "devDependencies": {

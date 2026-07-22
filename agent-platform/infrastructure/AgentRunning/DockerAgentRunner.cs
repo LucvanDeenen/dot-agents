@@ -81,6 +81,8 @@ public class DockerAgentRunner : IAgentRunner, IDisposable
         else
             _logger.LogWarning("No Claude subscription token configured (AgentRunner:ClaudeCodeOAuthToken / CLAUDE_CODE_OAUTH_TOKEN); the run will fail unless the image carries its own auth");
 
+        await EnsureImageAsync(cancellationToken);
+
         var container = await _client.Containers.CreateContainerAsync(new CreateContainerParameters
         {
             Image = _options.Image,
@@ -133,6 +135,35 @@ public class DockerAgentRunner : IAgentRunner, IDisposable
                 _logger.LogWarning(ex, "Failed to remove agent container {ContainerId}", container.ID[..12]);
             }
         }
+    }
+
+    // Locally the image is built by hand (agent-runner:local); on a deployed
+    // host it's a registry reference — pull it on first use so a fresh box
+    // needs no manual `docker pull`.
+    private async Task EnsureImageAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _client.Images.InspectImageAsync(_options.Image, cancellationToken);
+            return;
+        }
+        catch (DockerImageNotFoundException)
+        {
+            // Fall through to pull.
+        }
+
+        var separator = _options.Image.LastIndexOf(':');
+        var hasTag = separator > _options.Image.LastIndexOf('/');
+        _logger.LogInformation("Agent image {Image} not present locally, pulling", _options.Image);
+        await _client.Images.CreateImageAsync(
+            new ImagesCreateParameters
+            {
+                FromImage = hasTag ? _options.Image[..separator] : _options.Image,
+                Tag = hasTag ? _options.Image[(separator + 1)..] : "latest"
+            },
+            null,
+            new Progress<JSONMessage>(),
+            cancellationToken);
     }
 
     private async Task<(string Stdout, string Stderr)> ReadLogsAsync(string containerId, CancellationToken cancellationToken)
