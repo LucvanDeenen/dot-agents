@@ -2,3 +2,7 @@
 **/obj/
 .idea/
 **/.idea/
+# Generated at build time from Spec/*.yaml and never committed. Excluding it
+# keeps a local `docker build` faithful to CI, which checks out tracked files
+# only — otherwise a stale host copy silently satisfies the compile.
+**/Generated/

@@ -25,15 +25,27 @@
     <!--
       NSwag.MSBuild's own docs hook this via AfterTargets="Build", which fits
       its usual job (generate a client from a doc the build just produced).
-      Here the source is the checked-in spec/*.yaml, and
-      JobsController itself compiles against the generated abstract
-      controller + models, so generation must happen before Compile, not
-      after — hence BeforeTargets="CoreCompile" instead.
+      Here the source is the checked-in Spec/*.yaml, and the controllers
+      themselves compile against the generated abstract controller + models,
+      so generation must happen before Compile, not after — hence
+      BeforeTargets="CoreCompile" instead.
+
+      Paths must match the on-disk casing exactly: Windows is forgiving, the
+      Linux build container is not (Spec/, not spec/).
+
+      The generated file is not committed, so on a clean checkout it does not
+      exist when MSBuild evaluates the **/*.cs glob into @(Compile) — that
+      happens before any target runs. Without re-adding it here the compiler
+      never sees it and every reference to the generated types fails. The
+      Remove first keeps it from being compiled twice on incremental builds,
+      where the glob already picked it up.
     -->
-    <!-- Paths must match the on-disk casing exactly: Windows is forgiving, the
-         Linux build container is not (Spec/, not spec/). -->
     <Target Name="NSwag" BeforeTargets="CoreCompile" Inputs="Spec/agent-platform.yaml;nswag.json" Outputs="Generated/Controllers.g.cs">
         <Exec Command="$(NSwagExe_Net100) run nswag.json /variables:Configuration=$(Configuration)" />
+        <ItemGroup>
+            <Compile Remove="Generated/**/*.cs" />
+            <Compile Include="Generated/**/*.cs" />
+        </ItemGroup>
     </Target>
 
 </Project>
