@@ -1,12 +1,9 @@
-import { createAuthPlugin } from "auth-client";
 import { createApp } from "vue";
 import "@/style/style.css";
 import App from "./App.vue";
 
-const auth = createAuthPlugin({
-  currentSystem: "auth-portal",
-  authFrontend: import.meta.env.VITE_FRONTEND_URL,
-  authBackend: import.meta.env.VITE_BACKEND_URL,
-  hmacSecret: ''
-});
-createApp(App).use(auth).mount("#app");
+// Auth is not wired up yet: the API has no auth and no view guards on it, so
+// the auth-client plugin was registered but unused. It also pulled in a
+// private repo over git+ssh, which CI image builds can't clone — dropped
+// until auth is actually implemented (see README "Out of scope").
+createApp(App).mount("#app");

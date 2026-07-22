@@ -1,0 +1,17 @@
+# .NET build artifacts
+bin/
+obj/
+*.user
+
+# Generated from spec/*.yaml at build time (see nswag.json) — not source of truth
+Generated/
+
+# env files
+.env
+.env.*
+!.env.example
+
+# Editor directories and files
+.vs/
+.idea/
+*.swp

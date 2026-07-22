@@ -1,15 +1,24 @@
-using AgentPlatform.Api.Data;
-using AgentPlatform.Api.Models;
-using AgentPlatform.Api.Services;
+using AgentPlatform.Api.Notifications;
+using AgentPlatform.Api.ExceptionHandling;
+using AgentPlatform.Application.Abstractions;
+using AgentPlatform.Application;
+using AgentPlatform.Infrastructure;
+using AgentPlatform.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AgentDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
-builder.Services.AddSingleton<IAgentRunner, ClaudeAgentRunner>();
-builder.Services.AddHostedService<JobDispatcher>();
+builder.Services.AddSingleton<JobStatusBroadcaster>();
+builder.Services.AddSingleton<IJobStatusNotifier, JobStatusNotifier>();
+
+builder.Services.AddExceptionHandler<TaskPublishFailedExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+builder.Services.AddControllers();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -20,27 +29,9 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-app.MapPost("/jobs", async (CreateJobRequest request, AgentDbContext db) =>
-{
-    var job = new AgentJob
-    {
-        Prompt = request.Prompt,
-        RepoUrl = request.RepoUrl,
-        Branch = request.Branch
-    };
+app.UseExceptionHandler();
 
-    db.Jobs.Add(job);
-    await db.SaveChangesAsync();
-
-    return Results.Created($"/jobs/{job.Id}", job);
-});
-
-app.MapGet("/jobs/{id:guid}", async (Guid id, AgentDbContext db) =>
-    await db.Jobs.FindAsync(id) is { } job ? Results.Ok(job) : Results.NotFound());
-
-app.MapGet("/jobs", async (AgentDbContext db) =>
-    await db.Jobs.OrderByDescending(j => j.CreatedAt).Take(50).ToListAsync());
+app.MapHealthChecks("/health");
+app.MapControllers();
 
 app.Run();
-
-record CreateJobRequest(string Prompt, string? RepoUrl, string? Branch);

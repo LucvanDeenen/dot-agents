@@ -1,112 +1,54 @@
 <script setup lang="ts">
-import { ref, provide, watch, nextTick, onMounted } from "vue";
-import ExperiencePage from "@/pages/ExperiencePage.vue";
-import ProjectPage from "@/pages/ProjectPage.vue";
-import ContactPage from "@/pages/ContactPage.vue";
-import AboutPage from "@/pages/AboutPage.vue";
-import HomePage from "@/pages/HomePage.vue";
+import { ref } from "vue";
+import { QueueListIcon, UserGroupIcon, ViewColumnsIcon } from "@heroicons/vue/24/outline";
+import TasksPage from "@/pages/TasksPage.vue";
+import AgentsPage from "@/pages/AgentsPage.vue";
+import BoardPage from "@/pages/BoardPage.vue";
 
-import { ChevronDoubleUpIcon } from "@heroicons/vue/24/solid";
+const navItems = [
+  { key: "tasks", label: "Tasks", icon: QueueListIcon },
+  { key: "agents", label: "Agents", icon: UserGroupIcon },
+  { key: "board", label: "Board", icon: ViewColumnsIcon },
+];
 
-const activeSection = ref("home-page");
-const targetSection = ref();
-const scrolling = ref(false);
-const loadedSections = ref<Record<string, boolean>>({});
-const updateSection = (sectionId: string) => {
-  targetSection.value = sectionId;
-};
+const activeKey = ref("tasks");
+const focusTaskId = ref<string | null>(null);
 
-onMounted(() => {
-  const sections = document.querySelectorAll("section");
-  sections.forEach((section) => {
-    loadedSections.value[section.id] = false;
-  });
+function navigate(key: string) {
+  if (key !== "board") focusTaskId.value = null;
+  activeKey.value = key;
+}
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          activeSection.value = entry.target.id;
-          loadedSections.value[entry.target.id] = true;
-        }
-      });
-    },
-    { threshold: 0.05 }
-  );
-  sections.forEach((section) => observer.observe(section));
-});
-
-watch(targetSection, async (target) => {
-  if (!target) return;
-  await nextTick();
-
-  let el: HTMLElement | null = document.querySelector(`#${target}`);
-  if (el) {
-    const offset = window.innerHeight / 8;
-    const top = el.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top, behavior: "smooth" });
-    scrolling.value = true;
-    activeSection.value = target;
-    targetSection.value = null;
-
-    setTimeout(() => {
-      scrolling.value = false;
-    }, 500);
-  }
-});
-provide("app", { updateSection });
+// After submitting a task, land on the board with that task's detail open.
+function openBoardWithTask(taskId: string) {
+  focusTaskId.value = taskId;
+  activeKey.value = "board";
+}
 </script>
 
 <template>
-  <div class="overflow-x-hidden">
-    <div
-      class="fixed bottom-5 right-5 sm:right-[10%] sm:bottom-10 z-50 transition-all duration-700 opacity-0 -translate-x-10"
-      :class="{ 'opacity-100 translate-x-0': activeSection !== 'home-page' }"
-      @click="updateSection('home-page')"
-    >
+  <div class="flex min-h-screen">
+    <aside class="w-52 shrink-0 border-r border-neutral-800 p-3 flex flex-col gap-1">
+      <div class="px-3 py-2 mb-3 text-lg font-bold text-yellow-500 tracking-wide">dot-agents</div>
       <button
-        class="button-icon hover:border-yellow-500 hover:text-yellow-500"
-        v-if="!scrolling"
+        v-for="item in navItems"
+        :key="item.key"
+        @click="navigate(item.key)"
+        class="flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors text-left"
+        :class="
+          activeKey === item.key
+            ? 'bg-neutral-800 text-white'
+            : 'text-gray-400 hover:text-white hover:bg-neutral-800/50'
+        "
       >
-        <ChevronDoubleUpIcon class="w-5 sm:w-7" />
+        <component :is="item.icon" class="w-5 h-5 shrink-0" />
+        {{ item.label }}
       </button>
-    </div>
-    <HomePage id="home-page" class="mb-12" />
-    <AboutPage
-      id="about-page"
-      class="transition-all duration-700 ease-in-out"
-      :class="
-        loadedSections['about-page']
-          ? 'opacity-100 translate-x-0'
-          : 'opacity-0 -translate-x-10'
-      "
-    />
-    <ProjectPage
-      id="project-page"
-      class="transition-all duration-700 ease-in-out"
-      :class="
-        loadedSections['project-page']
-          ? 'opacity-100 translate-x-0'
-          : 'opacity-0 translate-x-10'
-      "
-    />
-    <ExperiencePage
-      id="experience-page"
-      class="transition-all duration-700 ease-in-out"
-      :class="
-        loadedSections['experience-page']
-          ? 'opacity-100 translate-x-0'
-          : 'opacity-0 translate-x-10'
-      "
-    />
-    <ContactPage
-      id="contact-page"
-      class="transition-all duration-700 ease-in-out"
-      :class="
-        loadedSections['contact-page']
-          ? 'opacity-100 translate-x-0'
-          : 'opacity-0 -translate-x-10'
-      "
-    />
+    </aside>
+    <main class="flex-1 min-w-0">
+      <TasksPage v-if="activeKey === 'tasks'" @submitted="openBoardWithTask" />
+      <AgentsPage v-else-if="activeKey === 'agents'" />
+      <BoardPage v-else :focus-task-id="focusTaskId" />
+    </main>
   </div>
 </template>
