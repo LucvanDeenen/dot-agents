@@ -1,11 +1,12 @@
 @AgentPlatform = http://localhost:5005
+@Version = v1
 
-GET {{AgentPlatform }}/health
+GET {{AgentPlatform }}/api/{{Version}}/health
 Accept: application/json
 
 ###
 
-POST {{AgentPlatform}}/jobs
+POST {{AgentPlatform}}/api/{{Version}}/health
 Content-Type: application/json
 Accept: application/json
 
