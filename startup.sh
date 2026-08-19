@@ -4,14 +4,24 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── Mode argument ─────────────────────────────────────────────────────────────
-MODE="${1:-all}"
-case "$MODE" in
-  all|frontend|backend) ;;
-  *)
-    echo "Usage: $0 [all|frontend|backend]"
-    echo "  all      - start infra, backend, and frontend (default)"
+usage() {
+    echo "Usage: $0 <all|infra|frontend|backend>"
+    echo "  all      - start infra, backend, and frontend"
+    echo "  infra    - start infra only"
     echo "  frontend - start infra and frontend only"
     echo "  backend  - start infra and backend only"
+}
+
+if [[ $# -lt 1 ]]; then
+    usage
+    exit 1
+fi
+
+MODE="$1"
+case "$MODE" in
+  all|infra|frontend|backend) ;;
+  *)
+    usage
     exit 1
     ;;
 esac
@@ -32,6 +42,14 @@ for service in postgres rabbitmq; do
     echo " healthy"
 done
 echo ""
+
+if [[ "$MODE" == "infra" ]]; then
+    echo "Infra services started (mode: infra):"
+    echo "  Infra     : docker-compose (postgres + rabbitmq)"
+    echo ""
+    echo "Use './stop.sh' to stop them."
+    exit 0
+fi
 
 PIDS=()
 
