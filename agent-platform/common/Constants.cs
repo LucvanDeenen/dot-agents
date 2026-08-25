@@ -1,4 +1,4 @@
-﻿namespace AgentPlatform.Domain;
+﻿namespace AgentPlatform.Common;
 
 public abstract class Constants
 {

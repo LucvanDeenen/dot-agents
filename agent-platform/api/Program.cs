@@ -1,5 +1,5 @@
 using AgentPlatform.Application.Extensions;
-using AgentPlatform.Domain;
+using AgentPlatform.Common;
 using AgentPlatform.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
