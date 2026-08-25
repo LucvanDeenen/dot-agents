@@ -6,14 +6,14 @@ Accept: application/json
 
 ###
 
-POST {{AgentPlatform}}/api/{{Version}}/health
+POST {{AgentPlatform}}/api/{{Version}}/tasks
 Content-Type: application/json
 Accept: application/json
 
 {
-  "prompt": "Review the repository and propose CI pipeline improvements.",
-  "repoUrl": "https://github.com/LucvanDeenen/dot-agents",
-  "branch": "main"
+  "action": "Review the repository and propose CI pipeline improvements.",
+  "system": "github",
+  "context": "main"
 }
 
 ###
