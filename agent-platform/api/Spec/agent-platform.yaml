@@ -37,7 +37,11 @@ paths:
     post:
       tags: [Task]
       operationId: assignTask
-      summary: Create a new agent task and publish it to the task queue.
+      summary: Start an agent for a task and return its first response.
+      description: >
+        Spins up an agent runner for the task and returns the agent's first
+        response together with a runId. The runner stays alive for a short
+        window so the conversation can be continued via POST /tasks/{runId}/messages.
       requestBody:
         required: true
         content:
@@ -45,8 +49,8 @@ paths:
             schema:
               $ref: "#/components/schemas/TaskRequest"
       responses:
-        "202":
-          description: The task was persisted and published to the task queue.
+        "200":
+          description: The agent started and produced its first response.
           content:
             application/json:
               schema:
@@ -57,6 +61,40 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ValidationProblemDetails"
+  /tasks/{runId}/messages:
+    post:
+      tags: [Task]
+      operationId: continueTask
+      summary: Send a follow-up message to a running agent session.
+      description: >
+        Continues the conversation with the agent started by POST /tasks,
+        resuming its session, and returns the agent's next response.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          description: The runId returned by POST /tasks.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageRequest"
+      responses:
+        "200":
+          description: The agent produced its next response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+        "404":
+          description: No live run exists for the given runId (it never existed or its session already closed).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
 
 components:
   schemas:
@@ -69,12 +107,21 @@ components:
           type: string
         system:
           type: string
+    MessageRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
     AgentResponse:
       type: object
-      required: [response]
+      required: [response, runId]
       properties:
         response:
           type: string
+        runId:
+          type: string
+          description: Id of the live run; pass it to POST /tasks/{runId}/messages to continue.
         action:
           type: string
     ProblemDetails:

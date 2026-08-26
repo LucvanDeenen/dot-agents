@@ -6,6 +6,7 @@ Accept: application/json
 
 ###
 
+# @name assignTask
 POST {{AgentPlatform}}/api/{{Version}}/tasks
 Content-Type: application/json
 Accept: application/json
@@ -14,6 +15,19 @@ Accept: application/json
   "action": "Review the repository and propose CI pipeline improvements.",
   "system": "github",
   "context": "main"
+}
+
+###
+
+# Continue the same session — runId comes from the assignTask response above.
+@runId = {{assignTask.response.body.runId}}
+
+POST {{AgentPlatform}}/api/{{Version}}/tasks/{{runId}}/messages
+Content-Type: application/json
+Accept: application/json
+
+{
+  "message": "Focus your proposal on caching the build to speed up CI."
 }
 
 ###

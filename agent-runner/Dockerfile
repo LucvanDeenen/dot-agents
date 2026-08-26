@@ -19,5 +19,6 @@ WORKDIR /home/agent/workspace
 
 COPY --chown=agent:agent setup.mjs /home/agent/setup.mjs
 COPY --chown=agent:agent entrypoint.sh /home/agent/entrypoint.sh
+COPY --chown=agent:agent run.sh /home/agent/run.sh
 
 ENTRYPOINT ["/bin/bash", "/home/agent/entrypoint.sh"]
