@@ -1,6 +1,6 @@
 name: agent-platform
 
-# Infra services for the agent-platform. The .NET API (agent-platform/api)
+# Infra services for the agent-platform. The .NET API (backend/api)
 # runs separately (dotnet run) and connects to these over localhost during
 # development; on the Pi it can be pointed at these same service names.
 

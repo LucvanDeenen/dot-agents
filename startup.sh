@@ -78,7 +78,7 @@ if [[ "$MODE" == "all" || "$MODE" == "backend" ]]; then
     # the Docker agent runner can pass the token into agent containers.
     set -a; source "$SCRIPT_DIR/infra/.env"; set +a
     echo "Starting backend (dotnet run)..."
-    pushd "$SCRIPT_DIR/agent-platform/api" > /dev/null
+    pushd "$SCRIPT_DIR/backend/api" > /dev/null
     dotnet run --launch-profile http &
     BACKEND_PID=$!
     PIDS+=("$BACKEND_PID")

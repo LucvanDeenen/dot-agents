@@ -14,7 +14,7 @@ Long term this should become an easy-to-use agentic platform where people can ei
 |---|--------|--------------|----------------|
 | 1 | **Frontend** | Sidebar app with three pages: **Tasks** (create/submit work), **Agents** (define agents: skills, allowed tools, context/system prompt), **Board** (kanban reflecting live task status via SSE). | `frontend/` (Vue 3 + Tailwind) |
 | 2 | **Task queue** | RabbitMQ topic exchange `agent.tasks`; tasks are published with a routing key and consumed by the dispatcher. | `infra/docker-compose.yml` |
-| 3 | **API + dispatcher** | ASP.NET Core service. Persists agents/skills/tasks to Postgres, publishes tasks onto RabbitMQ, and consumes them again: when capacity is available and an agent's routing pattern matches the task, it triggers an agent run. Also the store for all defined skills. | `agent-platform/` |
+| 3 | **API + dispatcher** | ASP.NET Core service. Persists agents/skills/tasks to Postgres, publishes tasks onto RabbitMQ, and consumes them again: when capacity is available and an agent's routing pattern matches the task, it triggers an agent run. Also the store for all defined skills. | `backend/` |
 | 4 | **Agent runner** | Docker-spawned containers (capped concurrency) that run a Claude Code session per task using your Claude subscription. Each run is a minimal two-agent team: the main session acts as the **guide** (plans, reviews, reports) and delegates implementation to a **completer** subagent generated from the agent's skills. | `agent-runner/` + `DockerAgentRunner` in the API |
 
 ### Design decisions (locked for the POC)
@@ -53,7 +53,7 @@ frontend POST /jobs ──► Postgres row (Pending) ──► publish to agent.
 ## Repo layout
 
 - `frontend/` — Vue app (Tasks / Agents / Board).
-- `agent-platform/` — .NET solution: `api` (spec-first controllers via NSwag — edit `api/Spec/agent-platform.yaml`, not the generated code), `application` (MediatR handlers), `domain`, `infrastructure` (EF Core + RabbitMQ + Docker runner).
+- `backend/` — .NET solution: `api` (spec-first controllers via NSwag — edit `api/Spec/agent-platform.yaml`, not the generated code), `application` (MediatR handlers), `domain`, `infrastructure` (EF Core + RabbitMQ + Docker runner).
 - `agent-runner/` — Dockerfile + entrypoint for the per-task Claude Code container.
 - `infra/` — docker-compose for Postgres + RabbitMQ (local development only).
 - `.github/workflows/publish.yml` — builds and pushes the three deployable images.
