@@ -1,5 +1,5 @@
+using AgentPlatform.Api.Common;
 using AgentPlatform.Application.Extensions;
-using AgentPlatform.Common;
 using AgentPlatform.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,7 +14,8 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 app.UseExceptionHandler();
-app.MapHealthChecks(Constants.Endpoints.Health);
+
+app.MapHealthChecks(Constants.HealthEndpoint);
 app.MapControllers();
 
 app.Run();

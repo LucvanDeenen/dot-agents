@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using AgentPlatform.Application.Agents;
+using AgentPlatform.Infrastructure.Options;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging;
@@ -9,40 +10,29 @@ using Microsoft.Extensions.Options;
 namespace AgentPlatform.Infrastructure.Agents;
 
 /// <summary>
-/// Instantiates an agent by starting one long-lived <c>agent-runner</c> container
-/// per run. The container materializes its workspace, then idles (up to the
-/// configured lifetime) so its Claude Code session persists on disk. Each turn —
-/// the first one and every follow-up — is driven with `docker exec run.sh`,
-/// which invokes `claude -p --output-format json`; follow-ups add `--continue`
-/// to resume the same session. The run is addressed by a runId baked into the
-/// container name, so no separate registry is needed.
+/// Instantiates an agent by starting one long-lived container per run. The
+/// container just idles (up to the configured lifetime) so its Claude Code
+/// session persists on disk. Each turn — the first one and every follow-up — is
+/// driven with `docker exec claude -p …`; follow-ups add `--continue` to resume
+/// the same session. The run is addressed by a runId baked into the container
+/// name, so no separate registry is needed.
 /// </summary>
 public sealed class DockerAgentRunner(
     IDockerClient docker,
-    IOptions<AgentRunnerOptions> options,
+    IOptions<RunnerOptions> options,
     ILogger<DockerAgentRunner> logger) : IAgentRunner
 {
-    private const string RunScript = "/home/agent/run.sh";
-    private const string NamePrefix = "agent-run-";
+    private const string NamePrefix = "agent-platform-run-";
+    private const string WorkDir = "/home/agent/workspace";
 
-    // camelCase so the payload keys line up with what the runner's setup.mjs reads.
-    private static readonly JsonSerializerOptions RunConfigJson = new(JsonSerializerDefaults.Web)
-    {
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-    };
+    private readonly RunnerOptions _options = options.Value;
 
-    private readonly AgentRunnerOptions _options = options.Value;
-
-    public async Task<AgentReply> StartAsync(AgentRunConfig config, CancellationToken ct)
+    public async Task<AgentReply> StartAsync(AgentConfig config, CancellationToken ct)
     {
         var runId = Guid.NewGuid().ToString("N");
 
-        var runConfig = Convert.ToBase64String(
-            Encoding.UTF8.GetBytes(JsonSerializer.Serialize(config, RunConfigJson)));
-
         var env = new List<string>
         {
-            $"RUN_CONFIG={runConfig}",
             $"AGENT_MAX_LIFETIME_SECONDS={_options.RunTimeoutMinutes * 60}"
         };
 
@@ -60,17 +50,26 @@ public sealed class DockerAgentRunner(
             Env = env,
             Labels = new Dictionary<string, string>
             {
+                // Compose's own labels: make Docker Desktop / `docker compose ls`
+                // group this container under the agent-platform stack.
+                ["com.docker.compose.project"] = _options.ComposeProject,
+                ["com.docker.compose.service"] = "agent-run",
+                ["com.docker.compose.oneoff"] = "True",
+                // Our own metadata for finding/reaping runs.
+                ["agent-platform.network"] = "agents",
                 ["agent-platform.run"] = runId,
                 ["agent-platform.agent"] = config.AgentName
-            }
+            },
+            // Join the backend-owned agent network (created by AgentNetworkInitializer).
+            HostConfig = new HostConfig { NetworkMode = _options.Network }
         }, ct);
 
         await docker.Containers.StartContainerAsync(created.ID, new ContainerStartParameters(), ct);
         logger.LogInformation("Started agent '{Agent}' as run {RunId} (container {ContainerId})",
             config.AgentName, runId, created.ID);
 
-        // First turn: empty message → the container uses its generated guide prompt.
-        var response = await ExecTurnAsync(NamePrefix + runId, message: "", resume: false, ct);
+        // First turn: send the task instruction straight to `claude -p`.
+        var response = await ExecTurnAsync(NamePrefix + runId, config.Instruction, resume: false, ct);
         return new AgentReply(runId, response);
     }
 
@@ -80,10 +79,17 @@ public sealed class DockerAgentRunner(
         return new AgentReply(runId, response);
     }
 
-    /// <summary>Run one Claude turn inside the container via `docker exec run.sh` and return its text result.</summary>
+    /// <summary>Run one Claude turn inside the container via `docker exec claude -p …` and return its text result.</summary>
     private async Task<string> ExecTurnAsync(string containerName, string message, bool resume, CancellationToken ct)
     {
-        var mode = resume ? "continue" : "start";
+        var cmd = new List<string>
+        {
+            "claude", "-p", message,
+            "--output-format", "json",
+            "--dangerously-skip-permissions"
+        };
+        // Follow-up turns resume the container's existing session.
+        if (resume) cmd.Add("--continue");
 
         ContainerExecCreateResponse exec;
         try
@@ -92,20 +98,20 @@ public sealed class DockerAgentRunner(
             {
                 AttachStdout = true,
                 AttachStderr = true,
-                // Invoke via bash so the script doesn't depend on its +x bit surviving checkout.
-                Cmd = new List<string> { "/bin/bash", RunScript, message, mode }
+                WorkingDir = WorkDir,
+                Cmd = cmd
             }, ct);
         }
         catch (DockerContainerNotFoundException)
         {
             // Container gone (never started, or self-terminated past its lifetime).
-            throw new AgentRunNotFoundException(TrimName(containerName));
+            throw new Exception(TrimName(containerName));
         }
         catch (DockerApiException ex) when (
             ex.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.Conflict)
         {
             // 404 = container removed; 409 = exists but no longer running (past its lifetime).
-            throw new AgentRunNotFoundException(TrimName(containerName));
+            throw new Exception(TrimName(containerName));
         }
 
         var (stdout, stderr) = await RunExecAsync(exec.ID, ct);

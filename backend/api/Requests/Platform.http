@@ -1,13 +1,23 @@
 @AgentPlatform = http://localhost:5005
-@Version = v1
+@version = v1
+@endpoint = prompts
 
-GET {{AgentPlatform }}/api/{{Version}}/health
+# @name SimpleTask
+# Start of a simple conversation
+POST {{AgentPlatform}}/api/{{version}}/{{endpoint}}
+Content-Type: application/json
 Accept: application/json
+
+{
+  "message": "Hello, how are you?"
+}
+
 
 ###
 
-# @name assignTask
-POST {{AgentPlatform}}/api/{{Version}}/tasks
+# @name GitTask
+# Continue the same session — runId comes from the assignTask response above.
+POST {{AgentPlatform}}/api/{{version}}/{{endpoint}}
 Content-Type: application/json
 Accept: application/json
 
@@ -19,10 +29,11 @@ Accept: application/json
 
 ###
 
+# @name Simple Task 
 # Continue the same session — runId comes from the assignTask response above.
 @runId = {{assignTask.response.body.runId}}
 
-POST {{AgentPlatform}}/api/{{Version}}/tasks/{{runId}}/messages
+POST {{AgentPlatform}}/api/{{version}}/{{endpoint}}/{{runId}}
 Content-Type: application/json
 Accept: application/json
 

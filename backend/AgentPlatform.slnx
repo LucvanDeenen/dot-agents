@@ -4,17 +4,7 @@
     <File Path="Dockerfile" />
     <File Path="NuGet.Config" />
   </Folder>
-  <Project Path="api/AgentPlatform.Api.csproj">
-    <BuildDependency Project="common/AgentPlatform.Common.csproj" />
-  </Project>
-  <Project Path="common/AgentPlatform.Common.csproj" />
-  <Project Path="domain/AgentPlatform.Domain.csproj">
-    <BuildDependency Project="common/AgentPlatform.Common.csproj" />
-  </Project>
-  <Project Path="application/AgentPlatform.Application.csproj">
-    <BuildDependency Project="common/AgentPlatform.Common.csproj" />
-  </Project>
-  <Project Path="infrastructure/AgentPlatform.Infrastructure.csproj">
-    <BuildDependency Project="common/AgentPlatform.Common.csproj" />
-  </Project>
+  <Project Path="api/AgentPlatform.Api.csproj" />
+  <Project Path="application/AgentPlatform.Application.csproj" />
+  <Project Path="infrastructure/AgentPlatform.Infrastructure.csproj" />
 </Solution>

@@ -23,6 +23,12 @@
         <ProjectReference Include="..\infrastructure\AgentPlatform.Infrastructure.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Update="nswag.json">
+        <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+
     <!--
       NSwag.MSBuild's own docs hook this via AfterTargets="Build", which fits
       its usual job (generate a client from a doc the build just produced).

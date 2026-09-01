@@ -1,13 +1,12 @@
-# Per-task agent container: one Claude Code session per task, authenticated
-# with a Claude subscription token (CLAUDE_CODE_OAUTH_TOKEN). The task + agent
-# definition arrive as base64 JSON in RUN_CONFIG; setup.mjs materializes them
-# into a workspace (guide prompt, completer subagent, skills) and
-# entrypoint.sh runs the session. Build with:
-#   docker build -t agent-runner:local agent-runner/
+# Per-run agent container: a Claude Code session authenticated with a Claude
+# subscription token (CLAUDE_CODE_OAUTH_TOKEN). The container idles; the API
+# drives each turn with `docker exec claude -p …`. Build with:
+#   docker build -t agent-runner:local agent/
 FROM node:22-slim
 
+# ca-certificates: TLS to the Claude API. ripgrep: Claude Code's file search.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates curl ripgrep \
+    && apt-get install -y --no-install-recommends ca-certificates ripgrep \
     && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g @anthropic-ai/claude-code
@@ -17,8 +16,6 @@ RUN useradd -m agent
 USER agent
 WORKDIR /home/agent/workspace
 
-COPY --chown=agent:agent setup.mjs /home/agent/setup.mjs
 COPY --chown=agent:agent entrypoint.sh /home/agent/entrypoint.sh
-COPY --chown=agent:agent run.sh /home/agent/run.sh
 
 ENTRYPOINT ["/bin/bash", "/home/agent/entrypoint.sh"]

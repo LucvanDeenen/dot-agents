@@ -7,6 +7,6 @@ public static class ServiceExtension
 {
     public static void AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<ITaskService, TaskService>();
+        services.AddScoped<IAgentService, AgentService>();
     }
 }

@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AgentPlatform.Infrastructure.Agents;
+namespace AgentPlatform.Infrastructure.Options;
 
 /// <summary>Binds the "AgentRunner" configuration section (see appsettings.json).</summary>
-public class AgentRunnerOptions
+public class RunnerOptions
 {
     public const string SectionName = "AgentRunner";
 
@@ -25,4 +25,20 @@ public class AgentRunnerOptions
     /// env var of the same name when left blank.
     /// </summary>
     public string? ClaudeCodeOAuthToken { get; set; }
+
+    /// <summary>
+    /// Docker Compose project label applied to the runner network and containers,
+    /// so they group under the same stack in Docker Desktop / `docker compose ls`.
+    /// Matches the `name:` in infra/docker-compose.yml.
+    /// </summary>
+    [Required]
+    public string ComposeProject { get; set; } = "agent-platform";
+
+    /// <summary>
+    /// Docker network the runner containers join. Created by the backend on
+    /// startup (see AgentNetworkInitializer) and owned by it — every agent run
+    /// is attached here.
+    /// </summary>
+    [Required]
+    public string Network { get; set; } = "agent-platform-agents";
 }

@@ -1,0 +1,7 @@
+@AgentPlatform = http://localhost:5005
+@Version = v1
+
+GET {{AgentPlatform}}/health
+Accept: application/json
+
+###
