@@ -15,24 +15,6 @@ tags:
   - name: System
 
 paths:
-  /health:
-    get:
-      tags: [System]
-      operationId: getHealth
-      summary: Liveness/readiness probe.
-      responses:
-        "200":
-          description: The service is healthy.
-          content:
-            text/plain:
-              schema:
-                type: string
-        "503":
-          description: The service is unhealthy or degraded.
-          content:
-            text/plain:
-              schema:
-                type: string
   /tasks:
     post:
       tags: [Task]
