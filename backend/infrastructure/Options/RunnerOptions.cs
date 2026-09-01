@@ -41,4 +41,21 @@ public class RunnerOptions
     /// </summary>
     [Required]
     public string Network { get; set; } = "agent-platform-agents";
+
+    /// <summary>
+    /// Optional: absolute path to the directory the infra stack's
+    /// `docker compose up` ran from. When set (together with
+    /// <see cref="ComposeConfigFile"/>), it's stamped as the
+    /// <c>com.docker.compose.project.working_dir</c> label so Docker Desktop
+    /// nests runs into the exact same agent-platform stack. Machine-specific,
+    /// so it's left unset by default.
+    /// </summary>
+    public string? ComposeWorkingDir { get; set; }
+
+    /// <summary>
+    /// Optional: absolute path to the infra compose file, stamped as the
+    /// <c>com.docker.compose.project.config_files</c> label. See
+    /// <see cref="ComposeWorkingDir"/>.
+    /// </summary>
+    public string? ComposeConfigFile { get; set; }
 }

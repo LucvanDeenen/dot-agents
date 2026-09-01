@@ -43,23 +43,32 @@ public sealed class DockerAgentRunner(
         else
             logger.LogWarning("No CLAUDE_CODE_OAUTH_TOKEN available; the runner will fail to authenticate.");
 
+        var labels = new Dictionary<string, string>
+        {
+            // Compose's own labels: make Docker Desktop / `docker compose ls`
+            // group this container under the agent-platform stack as a normal member.
+            ["com.docker.compose.project"] = _options.ComposeProject,
+            ["com.docker.compose.service"] = "agent-run",
+            ["com.docker.compose.oneoff"] = "False",
+            // Our own metadata for finding/reaping runs.
+            ["agent-platform.network"] = "agents",
+            ["agent-platform.run"] = runId,
+            ["agent-platform.agent"] = config.AgentName
+        };
+
+        // Match the infra stack's compose metadata so runs nest into the exact
+        // same stack (only when configured — these paths are machine-specific).
+        if (!string.IsNullOrWhiteSpace(_options.ComposeWorkingDir))
+            labels["com.docker.compose.project.working_dir"] = _options.ComposeWorkingDir;
+        if (!string.IsNullOrWhiteSpace(_options.ComposeConfigFile))
+            labels["com.docker.compose.project.config_files"] = _options.ComposeConfigFile;
+
         var created = await docker.Containers.CreateContainerAsync(new CreateContainerParameters
         {
             Name = NamePrefix + runId,
             Image = _options.Image,
             Env = env,
-            Labels = new Dictionary<string, string>
-            {
-                // Compose's own labels: make Docker Desktop / `docker compose ls`
-                // group this container under the agent-platform stack.
-                ["com.docker.compose.project"] = _options.ComposeProject,
-                ["com.docker.compose.service"] = "agent-run",
-                ["com.docker.compose.oneoff"] = "True",
-                // Our own metadata for finding/reaping runs.
-                ["agent-platform.network"] = "agents",
-                ["agent-platform.run"] = runId,
-                ["agent-platform.agent"] = config.AgentName
-            },
+            Labels = labels,
             // Join the backend-owned agent network (created by AgentNetworkInitializer).
             HostConfig = new HostConfig { NetworkMode = _options.Network }
         }, ct);

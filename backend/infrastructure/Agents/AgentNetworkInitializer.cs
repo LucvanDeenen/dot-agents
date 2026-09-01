@@ -12,13 +12,18 @@ namespace AgentPlatform.Infrastructure.Agents;
 /// attach to exists (see <see cref="RunnerOptions.Network"/>). Idempotent: it
 /// creates the network only if missing. Fails fast — if the Docker engine is
 /// unreachable or the network cannot be created, it throws and the application
-/// refuses to start, since no agent run could succeed anyway.
+/// refuses to start, since no agent run could succeed anyway. On shutdown, it
+/// tears down the agent run containers and removes the network.
 /// </summary>
 public sealed class AgentNetworkInitializer(
     IDockerClient docker,
     IOptions<RunnerOptions> options,
     ILogger<AgentNetworkInitializer> logger) : IHostedService
 {
+    // Label stamped on every agent run container (see DockerAgentRunner), used
+    // to find them for cleanup. Docker label filters use "key=value" form.
+    private const string AgentLabelFilter = "agent-platform.network=agents";
+
     private readonly RunnerOptions _options = options.Value;
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -27,6 +32,10 @@ public sealed class AgentNetworkInitializer(
 
         try
         {
+            // Sweep leftovers from a previous session that didn't shut down
+            // gracefully (e.g. killed from an IDE) — StopAsync can't run then.
+            await RemoveAgentContainersAsync(cancellationToken);
+
             var existing = await docker.Networks.ListNetworksAsync(new NetworksListParameters(), cancellationToken);
             if (existing.Any(n => n.Name == name))
             {
@@ -58,5 +67,56 @@ public sealed class AgentNetworkInitializer(
         }
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        var name = _options.Network;
+        logger.LogInformation("Agent platform shutting down — removing agent runs and network '{Network}'.", name);
+
+        try
+        {
+            // Remove agent run containers first — a network can't be deleted
+            // while containers are still attached to it.
+            await RemoveAgentContainersAsync(cancellationToken);
+
+            var network = (await docker.Networks.ListNetworksAsync(new NetworksListParameters(), cancellationToken))
+                .FirstOrDefault(n => n.Name == name);
+            if (network is not null)
+            {
+                await docker.Networks.DeleteNetworkAsync(network.ID, cancellationToken);
+                logger.LogInformation("Removed agent network '{Network}'.", name);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Best-effort on shutdown — log and move on.
+            logger.LogWarning(ex, "Cleanup of agent network '{Network}' and its containers failed.", name);
+        }
+    }
+
+    /// <summary>Force-remove every agent run container (matched by label), running or exited.</summary>
+    private async Task RemoveAgentContainersAsync(CancellationToken ct)
+    {
+        var containers = await docker.Containers.ListContainersAsync(new ContainersListParameters
+        {
+            All = true,
+            Filters = new Dictionary<string, IDictionary<string, bool>>
+            {
+                ["label"] = new Dictionary<string, bool> { [AgentLabelFilter] = true }
+            }
+        }, ct);
+
+        foreach (var container in containers)
+        {
+            try
+            {
+                await docker.Containers.RemoveContainerAsync(container.ID,
+                    new ContainerRemoveParameters { Force = true }, ct);
+                logger.LogInformation("Removed agent container {Id}.", container.ID);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to remove agent container {Id}.", container.ID);
+            }
+        }
+    }
 }
