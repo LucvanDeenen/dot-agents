@@ -10,7 +10,7 @@ Generated/
 .env
 .env.*
 !.env.example
-.appsettings.Development.json
+appsettings.*.json
 
 # Editor directories and files
 .vs/
