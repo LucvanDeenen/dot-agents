@@ -19,7 +19,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\application\AgentPlatform.Application.csproj"/>
-        <ProjectReference Include="..\common\AgentPlatform.Common.csproj" />
         <ProjectReference Include="..\infrastructure\AgentPlatform.Infrastructure.csproj"/>
     </ItemGroup>
 
