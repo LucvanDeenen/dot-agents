@@ -1,0 +1,45 @@
+@AgentPlatform = http://localhost:5005
+@version = v1
+@endpoint = prompts
+@repo = https://github.com/LucvanDeenen/dot-agents.git
+
+# @name SimpleTask
+# Start of a simple conversation
+POST {{AgentPlatform}}/api/{{version}}/{{endpoint}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "message": "Hello, how are you?"
+}
+
+
+###
+
+# @name GitTask
+# Push test: the agent clones {{repo}}, commits a file, and pushes to a
+# throwaway branch. Requires GIT_TOKEN / GIT_USER_NAME / GIT_USER_EMAIL in
+# infra/.env and the agent image rebuilt (git installed).
+POST {{AgentPlatform}}/api/{{version}}/{{endpoint}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "message": "Clone {{repo}} into the current directory. Create a new branch agent-test-{{$timestamp}}. Add a file agent-push-test.txt containing the current UTC timestamp and a one-line note. Commit it, then push that branch to origin. Do not touch the default branch. Report the branch name and commit SHA."
+}
+
+###
+
+# @name Simple Task 
+# Continue the same session — runId comes from the assignTask response above.
+@runId = {{assignTask.response.body.runId}}
+
+POST {{AgentPlatform}}/api/{{version}}/{{endpoint}}/{{runId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "message": "Focus your proposal on caching the build to speed up CI."
+}
+
+###

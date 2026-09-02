@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path="Dockerfile" />
+    <File Path="NuGet.Config" />
+  </Folder>
+  <Project Path="api/AgentPlatform.Api.csproj" />
+  <Project Path="application/AgentPlatform.Application.csproj" />
+  <Project Path="infrastructure/AgentPlatform.Infrastructure.csproj" />
+</Solution>

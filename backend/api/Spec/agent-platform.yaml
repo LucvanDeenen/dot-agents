@@ -1,0 +1,126 @@
+openapi: 3.0.3
+info:
+  title: Agent Platform API
+  version: "1.0"
+  description: >
+    Source-of-truth contract for the Agent Platform API. Controllers and
+    models are generated from this file at build time (see nswag.json) —
+    edit this spec first, then implement the generated abstract controller.
+
+servers:
+  # Absolute local URLs so "Try it out" targets the running app's port
+  # (launchSettings: http 5005, https 7117). Only the /api/v1 path segment
+  # feeds NSwag's controller route; host/port are ignored for codegen.
+  - url: "http://localhost:5005/api/v1"
+    description: Local development (HTTP)
+  - url: "https://localhost:7117/api/v1"
+    description: Local development (HTTPS)
+
+tags:
+  - name: Prompt
+
+paths:
+  /prompts:
+    post:
+      tags: [Prompt]
+      operationId: assignPrompt
+      summary: Start an agent for a Prompt and return its first response.
+      description: >
+        Spins up an agent runner for the Prompt and returns the agent's first
+        response together with a runId. The runner stays alive for a short
+        window so the conversation can be continued via POST /prompts/{runId}/messages.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromptRequest"
+      responses:
+        "200":
+          description: The agent's first response.
+          content:
+            application/json:
+              schema:
+                type: string
+        "400":
+          description: The request body failed validation (e.g. missing prompt).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ValidationProblemDetails"
+#  /Prompts/{runId}/messages:
+#    post:
+#      tags: [Prompt]
+#      operationId: continuePrompt
+#      summary: Send a follow-up message to a running agent session.
+#      description: >
+#        Continues the conversation with the agent started by POST /Prompts,
+#        resuming its session, and returns the agent's next response.
+#      parameters:
+#        - name: runId
+#          in: path
+#          required: true
+#          description: The runId returned by POST /Prompts.
+#          schema:
+#            type: string
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              $ref: "#/components/schemas/MessageRequest"
+#      responses:
+#        "200":
+#          description: The agent produced its next response.
+#          content:
+#            application/json:
+#              schema:
+#                $ref: "#/components/schemas/AgentResponse"
+#        "404":
+#          description: No live run exists for the given runId (it never existed or its session already closed).
+#          content:
+#            application/problem+json:
+#              schema:
+#                $ref: "#/components/schemas/ProblemDetails"
+
+components:
+  schemas:
+    PromptRequest:
+      type: object
+      properties:
+        message:
+          type: string
+    
+    # Error Handling
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          format: int32
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        instance:
+          type: string
+          nullable: true
+      additionalProperties: true
+    ValidationProblemDetails:
+      allOf:
+        - $ref: "#/components/schemas/ProblemDetails"
+        - type: object
+          required: [errors]
+          properties:
+            errors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string

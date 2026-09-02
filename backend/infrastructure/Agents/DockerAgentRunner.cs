@@ -1,0 +1,196 @@
+using System.Text;
+using System.Text.Json;
+using AgentPlatform.Application.Agents;
+using AgentPlatform.Infrastructure.Options;
+using Docker.DotNet;
+using Docker.DotNet.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace AgentPlatform.Infrastructure.Agents;
+
+/// <summary>
+/// Instantiates an agent by starting one long-lived container per run. The
+/// container just idles (up to the configured lifetime) so its Claude Code
+/// session persists on disk. Each turn — the first one and every follow-up — is
+/// driven with `docker exec claude -p …`; follow-ups add `--continue` to resume
+/// the same session. The run is addressed by a runId baked into the container
+/// name, so no separate registry is needed.
+/// </summary>
+public sealed class DockerAgentRunner(
+    IDockerClient docker,
+    IOptions<RunnerOptions> options,
+    ILogger<DockerAgentRunner> logger) : IAgentRunner
+{
+    private const string NamePrefix = "agent-platform-run-";
+    private const string WorkDir = "/home/agent/workspace";
+
+    private readonly RunnerOptions _options = options.Value;
+
+    public async Task<AgentReply> StartAsync(AgentConfig config, CancellationToken ct)
+    {
+        var runId = Guid.NewGuid().ToString("N");
+
+        var env = new List<string>
+        {
+            $"AGENT_MAX_LIFETIME_SECONDS={_options.RunTimeoutMinutes * 60}"
+        };
+
+        var token = _options.ClaudeCodeOAuthToken
+                    ?? Environment.GetEnvironmentVariable("CLAUDE_CODE_OAUTH_TOKEN");
+        if (!string.IsNullOrWhiteSpace(token))
+            env.Add($"CLAUDE_CODE_OAUTH_TOKEN={token}");
+        else
+            logger.LogWarning("No CLAUDE_CODE_OAUTH_TOKEN available; the runner will fail to authenticate.");
+
+        // Git credentials/identity for repo tasks (optional). Config values win,
+        // else fall back to the API process's own env vars.
+        AddEnv(env, "GIT_TOKEN", _options.GitToken ?? Environment.GetEnvironmentVariable("GIT_TOKEN"));
+        AddEnv(env, "GIT_USER_NAME", _options.GitUserName ?? Environment.GetEnvironmentVariable("GIT_USER_NAME"));
+        AddEnv(env, "GIT_USER_EMAIL", _options.GitUserEmail ?? Environment.GetEnvironmentVariable("GIT_USER_EMAIL"));
+        AddEnv(env, "GIT_HOST", _options.GitHost ?? Environment.GetEnvironmentVariable("GIT_HOST"));
+
+        var labels = new Dictionary<string, string>
+        {
+            // Compose's own labels: make Docker Desktop / `docker compose ls`
+            // group this container under the agent-platform stack as a normal member.
+            ["com.docker.compose.project"] = _options.ComposeProject,
+            ["com.docker.compose.service"] = "agent-run",
+            ["com.docker.compose.oneoff"] = "False",
+            // Our own metadata for finding/reaping runs.
+            ["agent-platform.network"] = "agents",
+            ["agent-platform.run"] = runId,
+            ["agent-platform.agent"] = config.AgentName
+        };
+
+        // Match the infra stack's compose metadata so runs nest into the exact
+        // same stack (only when configured — these paths are machine-specific).
+        if (!string.IsNullOrWhiteSpace(_options.ComposeWorkingDir))
+            labels["com.docker.compose.project.working_dir"] = _options.ComposeWorkingDir;
+        if (!string.IsNullOrWhiteSpace(_options.ComposeConfigFile))
+            labels["com.docker.compose.project.config_files"] = _options.ComposeConfigFile;
+
+        var created = await docker.Containers.CreateContainerAsync(new CreateContainerParameters
+        {
+            Name = NamePrefix + runId,
+            Image = _options.Image,
+            Env = env,
+            Labels = labels,
+            // Join the backend-owned agent network (created by AgentNetworkInitializer).
+            HostConfig = new HostConfig { NetworkMode = _options.Network }
+        }, ct);
+
+        await docker.Containers.StartContainerAsync(created.ID, new ContainerStartParameters(), ct);
+        logger.LogInformation("Started agent '{Agent}' as run {RunId} (container {ContainerId})",
+            config.AgentName, runId, created.ID);
+
+        // First turn: send the task instruction straight to `claude -p`.
+        var response = await ExecTurnAsync(NamePrefix + runId, config.Instruction, resume: false, ct);
+        return new AgentReply(runId, response);
+    }
+
+    public async Task<AgentReply> ContinueAsync(string runId, string message, CancellationToken ct)
+    {
+        var response = await ExecTurnAsync(NamePrefix + runId, message, resume: true, ct);
+        return new AgentReply(runId, response);
+    }
+
+    /// <summary>Run one Claude turn inside the container via `docker exec claude -p …` and return its text result.</summary>
+    private async Task<string> ExecTurnAsync(string containerName, string message, bool resume, CancellationToken ct)
+    {
+        var cmd = new List<string>
+        {
+            "claude", "-p", message,
+            "--output-format", "json",
+            "--dangerously-skip-permissions"
+        };
+        // Follow-up turns resume the container's existing session.
+        if (resume) cmd.Add("--continue");
+
+        ContainerExecCreateResponse exec;
+        try
+        {
+            exec = await docker.Exec.ExecCreateContainerAsync(containerName, new ContainerExecCreateParameters
+            {
+                AttachStdout = true,
+                AttachStderr = true,
+                WorkingDir = WorkDir,
+                Cmd = cmd
+            }, ct);
+        }
+        catch (DockerContainerNotFoundException)
+        {
+            // Container gone (never started, or self-terminated past its lifetime).
+            throw new Exception(TrimName(containerName));
+        }
+        catch (DockerApiException ex) when (
+            ex.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.Conflict)
+        {
+            // 404 = container removed; 409 = exists but no longer running (past its lifetime).
+            throw new Exception(TrimName(containerName));
+        }
+
+        var (stdout, stderr) = await RunExecAsync(exec.ID, ct);
+
+        var inspect = await docker.Exec.InspectContainerExecAsync(exec.ID, ct);
+        if (inspect.ExitCode != 0)
+            logger.LogWarning("Run turn exited {Exit} for {Container}: {Stderr}",
+                inspect.ExitCode, TrimName(containerName), stderr);
+
+        return ParseResult(stdout, stderr);
+    }
+
+    private async Task<(string Stdout, string Stderr)> RunExecAsync(string execId, CancellationToken ct)
+    {
+        using var stream = await docker.Exec.StartAndAttachContainerExecAsync(execId, tty: false, ct);
+
+        var stdout = new StringBuilder();
+        var stderr = new StringBuilder();
+        var buffer = new byte[8192];
+
+        while (true)
+        {
+            var read = await stream.ReadOutputAsync(buffer, 0, buffer.Length, ct);
+            if (read.EOF) break;
+
+            var text = Encoding.UTF8.GetString(buffer, 0, read.Count);
+            (read.Target == MultiplexedStream.TargetStream.StandardError ? stderr : stdout).Append(text);
+        }
+
+        return (stdout.ToString(), stderr.ToString());
+    }
+
+    /// <summary>Pull the human-readable text out of claude's `--output-format json` payload.</summary>
+    private string ParseResult(string stdout, string stderr)
+    {
+        var trimmed = stdout.Trim();
+        if (trimmed.Length == 0)
+            return string.IsNullOrWhiteSpace(stderr) ? "(no output)" : stderr.Trim();
+
+        try
+        {
+            using var doc = JsonDocument.Parse(trimmed);
+            if (doc.RootElement.TryGetProperty("result", out var result) &&
+                result.ValueKind == JsonValueKind.String)
+                return result.GetString() ?? trimmed;
+        }
+        catch (JsonException)
+        {
+            // Not JSON (e.g. an early error before claude ran) — fall through to raw.
+            logger.LogDebug("Run output was not JSON; returning raw stdout.");
+        }
+
+        return trimmed;
+    }
+
+    private static void AddEnv(List<string> env, string key, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            env.Add($"{key}={value}");
+    }
+
+    private static string TrimName(string containerName) =>
+        containerName.StartsWith(NamePrefix, StringComparison.Ordinal)
+            ? containerName[NamePrefix.Length..]
+            : containerName;
+}
