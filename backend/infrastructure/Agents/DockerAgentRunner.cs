@@ -43,6 +43,13 @@ public sealed class DockerAgentRunner(
         else
             logger.LogWarning("No CLAUDE_CODE_OAUTH_TOKEN available; the runner will fail to authenticate.");
 
+        // Git credentials/identity for repo tasks (optional). Config values win,
+        // else fall back to the API process's own env vars.
+        AddEnv(env, "GIT_TOKEN", _options.GitToken ?? Environment.GetEnvironmentVariable("GIT_TOKEN"));
+        AddEnv(env, "GIT_USER_NAME", _options.GitUserName ?? Environment.GetEnvironmentVariable("GIT_USER_NAME"));
+        AddEnv(env, "GIT_USER_EMAIL", _options.GitUserEmail ?? Environment.GetEnvironmentVariable("GIT_USER_EMAIL"));
+        AddEnv(env, "GIT_HOST", _options.GitHost ?? Environment.GetEnvironmentVariable("GIT_HOST"));
+
         var labels = new Dictionary<string, string>
         {
             // Compose's own labels: make Docker Desktop / `docker compose ls`
@@ -174,6 +181,12 @@ public sealed class DockerAgentRunner(
         }
 
         return trimmed;
+    }
+
+    private static void AddEnv(List<string> env, string key, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            env.Add($"{key}={value}");
     }
 
     private static string TrimName(string containerName) =>

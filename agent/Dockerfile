@@ -5,8 +5,9 @@
 FROM node:22-slim
 
 # ca-certificates: TLS to the Claude API. ripgrep: Claude Code's file search.
+# git: clone/commit/push for repo tasks.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates ripgrep \
+    && apt-get install -y --no-install-recommends ca-certificates ripgrep git \
     && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g @anthropic-ai/claude-code

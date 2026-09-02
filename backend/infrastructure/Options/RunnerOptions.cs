@@ -58,4 +58,20 @@ public class RunnerOptions
     /// <see cref="ComposeWorkingDir"/>.
     /// </summary>
     public string? ComposeConfigFile { get; set; }
+
+    /// <summary>
+    /// Optional: personal access token the runner uses to push over HTTPS.
+    /// Passed to the container as GIT_TOKEN; git is configured to use it
+    /// automatically. Falls back to the API's GIT_TOKEN env var when blank.
+    /// </summary>
+    public string? GitToken { get; set; }
+
+    /// <summary>Git author name for commits the agent makes (GIT_USER_NAME).</summary>
+    public string? GitUserName { get; set; }
+
+    /// <summary>Git author email for commits the agent makes (GIT_USER_EMAIL).</summary>
+    public string? GitUserEmail { get; set; }
+
+    /// <summary>Host the git token authenticates against (GIT_HOST). Defaults to github.com in the runner.</summary>
+    public string? GitHost { get; set; }
 }
